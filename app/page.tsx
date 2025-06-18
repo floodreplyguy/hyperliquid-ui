@@ -57,8 +57,8 @@ export default function TradingAnalytics() {
 
     try {
       const spot = tradeType === 'spot';
-      // Use the current origin (Flask server) for API calls
-      const response = await fetch(`/api/wallet/${walletAddress}?spot=${spot}`);
+      // Use the Flask server directly for API calls
+      const response = await fetch(`http://0.0.0.0:5000/api/wallet/${walletAddress}?spot=${spot}`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
