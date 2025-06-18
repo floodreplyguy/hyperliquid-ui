@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 
 interface WalletData {
   overall: {
@@ -40,95 +39,12 @@ interface WalletData {
   pnlChart: Array<{ trade: number; pnl: number }>;
 }
 
-interface LargeOrder {
-  symbol: string;
-  size: number;
-  price: number;
-  side: string;
-  timestamp: number;
-  wallet?: string; // Add wallet address for whale orders
-}
-
 export default function TradingAnalytics() {
   const [walletAddress, setWalletAddress] = useState('');
   const [tradeType, setTradeType] = useState<'perp' | 'spot'>('perp');
   const [data, setData] = useState<WalletData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [largeOrders, setLargeOrders] = useState<LargeOrder[]>([]);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Get the correct API base URL
-  const getApiUrl = () => {
-    if (typeof window !== 'undefined') {
-      // If we're on port 3000 (Next.js dev server), proxy to Flask
-      if (window.location.port === '3000') {
-        return '';
-      }
-      // If we're on the Flask port directly, use full URL
-      return `${window.location.protocol}//${window.location.hostname}:5000`;
-    }
-    return '';
-  };
-
-  // Initialize audio for large order alerts
-  useEffect(() => {
-    audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhCznJwuq6aR8Kg7vZrH4lCnLb8r2CQAyAze/HaiAGZqby6J9CDg+MhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhCznJwuq6aR8Kg7vZrH4lCnLb8r2CQAyAze/HaiAGZqby6J9CDg==');
-  }, []);
-
-  const playAlertSound = () => {
-    if (audioRef.current) {
-      audioRef.current.play().catch(console.error);
-    }
-  };
-
-  // Copy wallet address to search input
-  const copyWhaleWallet = (walletAddr: string) => {
-    setWalletAddress(walletAddr);
-  };
-
-  // Generate mock whale wallets for demo
-  const generateMockWhaleWallet = () => {
-    const mockWallets = [
-      '0x1234567890abcdef1234567890abcdef12345678',
-      '0xabcdef1234567890abcdef1234567890abcdef12',
-      '0x9876543210fedcba9876543210fedcba98765432',
-      '0xfedcba0987654321fedcba0987654321fedcba09',
-      '0x1111111111111111111111111111111111111111'
-    ];
-    return mockWallets[Math.floor(Math.random() * mockWallets.length)];
-  };
-
-  // Fetch large orders periodically
-  useEffect(() => {
-    const fetchLargeOrders = async () => {
-      try {
-        const response = await fetch(`${getApiUrl()}/api/large-orders`);
-        const result = await response.json();
-        if (result.orders) {
-          const ordersWithWallets = result.orders.map((order: LargeOrder) => ({
-            ...order,
-            wallet: generateMockWhaleWallet()
-          }));
-          
-          const newOrders = ordersWithWallets.filter(
-            (order: LargeOrder) => !largeOrders.some(existing => existing.timestamp === order.timestamp)
-          );
-          
-          if (newOrders.length > 0) {
-            setLargeOrders(prev => [...newOrders, ...prev].slice(0, 10));
-            playAlertSound();
-          }
-        }
-      } catch (err) {
-        console.error('Failed to fetch large orders:', err);
-      }
-    };
-
-    fetchLargeOrders();
-    const interval = setInterval(fetchLargeOrders, 5000);
-    return () => clearInterval(interval);
-  }, [largeOrders]);
 
   const fetchWalletData = async () => {
     if (!walletAddress.trim()) {
@@ -141,20 +57,22 @@ export default function TradingAnalytics() {
 
     try {
       const spot = tradeType === 'spot';
-      const response = await fetch(`${getApiUrl()}/api/wallet/${walletAddress}?spot=${spot}`);
-      
+      // Use the current origin (Flask server) for API calls
+      const response = await fetch(`/api/wallet/${walletAddress}?spot=${spot}`);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const result = await response.json();
-      
+
       if (result.error) {
         throw new Error(result.error);
       }
-      
+
       setData(result);
     } catch (err) {
+      console.error('Fetch error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
       setData(null);
     } finally {
@@ -186,17 +104,6 @@ export default function TradingAnalytics() {
 
   const getPnlColor = (pnl: number) => {
     return pnl >= 0 ? 'text-green-400' : 'text-red-400';
-  };
-
-  const formatTimeAgo = (timestamp: number) => {
-    const seconds = Math.floor((Date.now() - timestamp) / 1000);
-    if (seconds < 60) return `${seconds}s ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    return `${Math.floor(seconds / 3600)}h ago`;
-  };
-
-  const truncateWallet = (wallet: string) => {
-    return `${wallet.slice(0, 6)}...${wallet.slice(-4)}`;
   };
 
   return (
@@ -261,40 +168,6 @@ export default function TradingAnalytics() {
                   {loading ? 'ANALYZING...' : 'EXECUTE'}
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Live Large Orders Feed */}
-        <div className="max-w-6xl mx-auto mb-8">
-          <div className="bg-gradient-to-r from-red-900/50 to-orange-900/50 border border-red-500/30 rounded-lg p-4">
-            <h3 className="text-red-300 font-bold mb-3 text-lg tracking-wide">🚨 LIVE WHALE ALERTS ($100K+)</h3>
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {largeOrders.length === 0 ? (
-                <p className="text-gray-400 text-sm">Monitoring for large orders...</p>
-              ) : (
-                largeOrders.map((order, index) => (
-                  <div key={index} className="flex justify-between items-center bg-black/30 rounded px-3 py-2 text-sm">
-                    <div className="flex items-center gap-3">
-                      <span className="text-white font-semibold">{order.symbol}</span>
-                      <span className={order.side === 'BUY' ? 'text-green-400' : 'text-red-400'}>
-                        {order.side} {formatCurrency(order.size)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-gray-400 text-xs">{truncateWallet(order.wallet || '')}</span>
-                      <button
-                        onClick={() => copyWhaleWallet(order.wallet || '')}
-                        className="bg-purple-600 hover:bg-purple-500 text-white px-2 py-1 rounded text-xs font-semibold transition-colors"
-                        title="Copy wallet and search"
-                      >
-                        TRACK
-                      </button>
-                      <span className="text-gray-400 text-xs">{formatTimeAgo(order.timestamp)}</span>
-                    </div>
-                  </div>
-                ))
-              )}
             </div>
           </div>
         </div>
