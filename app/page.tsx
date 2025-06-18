@@ -1,10 +1,18 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 
+// 👉 Dynamically import the WhaleWatcher so it only runs in the browser
+//    (it opens a WebSocket and uses navigator.clipboard)
+const WhaleWatcher = dynamic(() => import('./whale-watcher'), { ssr: false });
+
+/* ────────────────────────────────────────────────────────────────────────── *
+   DATA MODELS
+ * ────────────────────────────────────────────────────────────────────────── */
 interface TradeStats {
   trades: number;
-  winRate: number;
+  winRate: number; // 0‑1
   avgWin: number;
   avgLoss: number;
   totalPnl: number;
@@ -31,10 +39,25 @@ interface ApiResponse {
   pnlChart: { trade: number; pnl: number }[];
 }
 
-export default function Home() {
+/* ────────────────────────────────────────────────────────────────────────── *
+   UTILITIES
+ * ────────────────────────────────────────────────────────────────────────── */
+const usd = (n: number) =>
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 2,
+  }).format(n);
+
+const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
+
+/* ────────────────────────────────────────────────────────────────────────── *
+   COMPONENT
+ * ────────────────────────────────────────────────────────────────────────── */
+export default function Page() {
   const [wallet, setWallet] = useState('');
   const [type, setType] = useState<'perp' | 'spot'>('perp');
-  const [data, setData] = useState<ApiResponse | null>(null);
+  const [stats, setStats] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -44,39 +67,40 @@ export default function Home() {
       return;
     }
 
-    setLoading(true);
-    setError('');
-    setData(null);
-
     try {
-      const res = await fetch(`https://pnl-dna-evansmargintrad.replit.app/stats?wallet=${wallet}&type=${type}`);
+      setLoading(true);
+      setError('');
+      setStats(null);
+
+      // 👇 Replace the hard‑coded URL with your own backend if moved
+      const url = `https://pnl-dna-evansmargintrad.replit.app/stats?wallet=${wallet}&type=${type}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`Backend error: ${res.status}`);
-      const json = await res.json();
-      if (json.error) throw new Error(json.error);
-      setData(json);
+      const json = (await res.json()) as ApiResponse | { error: string };
+      if ((json as any).error) throw new Error((json as any).error);
+      setStats(json as ApiResponse);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch');
+      setError(err.message ?? 'Failed to fetch');
     } finally {
       setLoading(false);
     }
   };
 
-  const format = (n: number) =>
-    new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(n);
-
   return (
-    <main className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Hyperliquid Wallet Stats</h1>
+    <main className="max-w-6xl mx-auto px-4 py-10 space-y-10 relative">
+      {/* ── Whale watcher lives in the corner ───────────────────────────── */}
+      <WhaleWatcher />
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6 items-end">
+      {/* ── Controls ───────────────────────────────────────────────────── */}
+      <section className="flex flex-col md:flex-row gap-4 items-end">
         <input
-          className="border p-2 rounded w-full md:flex-1"
-          placeholder="Enter wallet address"
           value={wallet}
           onChange={(e) => setWallet(e.target.value.trim())}
+          placeholder="Wallet (0x…)"
+          className="border rounded px-4 py-2 flex-1"
         />
         <select
-          className="border p-2 rounded"
+          className="border rounded px-3 py-2"
           value={type}
           onChange={(e) => setType(e.target.value as 'perp' | 'spot')}
         >
@@ -86,58 +110,60 @@ export default function Home() {
         <button
           onClick={fetchStats}
           disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+          className="bg-blue-600 text-white px-6 py-2 rounded disabled:opacity-50"
         >
-          {loading ? 'Loading...' : 'Fetch'}
+          {loading ? 'Loading…' : 'Fetch'}
         </button>
-      </div>
+      </section>
 
-      {error && <p className="text-red-600 mb-6">Error: {error}</p>}
+      {error && (
+        <p className="text-red-600 font-medium">
+          Error: {error}
+        </p>
+      )}
 
-      {data && (
-        <div className="space-y-8">
+      {/* ── Stats ──────────────────────────────────────────────────────── */}
+      {stats && (
+        <div className="space-y-10">
+          {/* Overview */}
+          <StatsGrid title="Overview">
+            <Stat label="Total Trades" value={stats.totalTrades} />
+            <Stat label="Win Rate" value={pct(stats.winRate)} />
+            <Stat label="Avg Win" value={usd(stats.avgWin)} />
+            <Stat label="Avg Loss" value={usd(stats.avgLoss)} />
+            <Stat label="Realized PnL" value={usd(stats.realizedPnl)} />
+            <Stat label="Volume" value={usd(stats.volume)} />
+            <Stat label="Fees" value={usd(stats.fees)} />
+            <Stat label="Avg Notional" value={usd(stats.avgNotional)} />
+            <Stat label="Most Traded" value={stats.mostTraded} />
+          </StatsGrid>
+
+          {/* Long & Short */}
+          <div className="grid md:grid-cols-2 gap-8">
+            <SideCard side="Longs" data={stats.longs} />
+            <SideCard side="Shorts" data={stats.shorts} />
+          </div>
+
+          {/* Biggest orders */}
           <section>
-            <h2 className="text-xl font-bold mb-3">Overview</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-              <Stat label="Total Trades" value={data.totalTrades} />
-              <Stat label="Win Rate" value={`${(data.winRate * 100).toFixed(1)}%`} />
-              <Stat label="Avg Win" value={`$${format(data.avgWin)}`} />
-              <Stat label="Avg Loss" value={`$${format(data.avgLoss)}`} />
-              <Stat label="Realized PnL" value={`$${format(data.realizedPnl)}`} />
-              <Stat label="Volume" value={`$${format(data.volume)}`} />
-              <Stat label="Fees" value={`$${format(data.fees)}`} />
-              <Stat label="Avg Notional" value={`$${format(data.avgNotional)}`} />
-              <Stat label="Most Traded" value={data.mostTraded} />
-            </div>
-          </section>
-
-          <section>
-            <h2 className="font-bold text-lg mb-2">Longs</h2>
-            <SideStats stats={data.longs} />
-          </section>
-
-          <section>
-            <h2 className="font-bold text-lg mb-2">Shorts</h2>
-            <SideStats stats={data.shorts} />
-          </section>
-
-          <section>
-            <h2 className="font-bold text-lg mb-2">Biggest Orders</h2>
-            <ul className="list-disc list-inside text-sm">
-              {data.biggestOrders.map((o, i) => (
+            <h2 className="font-bold text-lg mb-3">Biggest Orders (Notional)</h2>
+            <ul className="list-disc list-inside text-sm space-y-1">
+              {stats.biggestOrders.map((o, i) => (
                 <li key={i}>
-                  {o.symbol}: ${format(o.notional)}
+                  {o.symbol}: {usd(o.notional)}
                 </li>
               ))}
             </ul>
           </section>
 
-          <section className="text-sm">
+          <section className="text-sm space-y-1">
             <p>
-              <strong>Biggest Winner:</strong> {data.biggestWinner.symbol} — ${format(data.biggestWinner.pnl)}
+              <strong>Biggest Winner:</strong> {stats.biggestWinner.symbol} —{' '}
+              {usd(stats.biggestWinner.pnl)}
             </p>
             <p>
-              <strong>Biggest Loser:</strong> {data.biggestLoser.symbol} — ${format(data.biggestLoser.pnl)}
+              <strong>Biggest Loser:</strong> {stats.biggestLoser.symbol} —{' '}
+              {usd(stats.biggestLoser.pnl)}
             </p>
           </section>
         </div>
@@ -146,29 +172,48 @@ export default function Home() {
   );
 }
 
+/* ────────────────────────────────────────────────────────────────────────── *
+   SMALL PRESENTATIONAL COMPONENTS
+ * ────────────────────────────────────────────────────────────────────────── */
+function StatsGrid({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h2 className="text-xl font-bold mb-3">{title}</h2>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+        {children}
+      </div>
+    </section>
+  );
+}
+
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="border rounded p-3">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-base font-medium">{value}</p>
+    <div className="border rounded p-3 bg-white">
+      <p className="text-xs text-gray-500 mb-1">{label}</p>
+      <p className="text-base font-medium break-all">{value}</p>
     </div>
   );
 }
 
-function SideStats({ stats }: { stats: any }) {
-  const format = (n: number) =>
-    new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(n);
-
+function SideCard({ side, data }: { side: 'Longs' | 'Shorts'; data: TradeStats }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-      <Stat label="Trades" value={stats.trades} />
-      <Stat label="Win Rate" value={`${(stats.winRate * 100).toFixed(1)}%`} />
-      <Stat label="Avg Win" value={`$${format(stats.avgWin)}`} />
-      <Stat label="Avg Loss" value={`$${format(stats.avgLoss)}`} />
-      <Stat label="Total PnL" value={`$${format(stats.totalPnl)}`} />
-      <Stat label="Volume" value={`$${format(stats.volume)}`} />
-      <Stat label="Fees" value={`$${format(stats.fees)}`} />
-      <Stat label="Top 3 Symbols" value={Object.entries(stats.top3).map(([s, n]) => `${s} (${n})`).join(', ')} />
+    <div className="border rounded-lg p-4 bg-white shadow-sm space-y-2 text-sm">
+      <h3 className={`font-bold text-lg mb-2 ${side === 'Longs' ? 'text-green-600' : 'text-red-600'}`}>
+        {side}
+      </h3>
+      <Stat label="Trades" value={data.trades} />
+      <Stat label="Win Rate" value={pct(data.winRate)} />
+      <Stat label="Avg Win" value={usd(data.avgWin)} />
+      <Stat label="Avg Loss" value={usd(data.avgLoss)} />
+      <Stat label="Total PnL" value={usd(data.totalPnl)} />
+      <Stat label="Volume" value={usd(data.volume)} />
+      <Stat label="Fees" value={usd(data.fees)} />
+      <Stat
+        label="Top 3 Symbols"
+        value={Object.entries(data.top3)
+          .map(([sym, n]) => `${sym} (${n})`)
+          .join(', ')}
+      />
     </div>
   );
 }
