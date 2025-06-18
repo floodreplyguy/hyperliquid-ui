@@ -46,6 +46,7 @@ interface LargeOrder {
   price: number;
   side: string;
   timestamp: number;
+  wallet?: string; // Add wallet address for whale orders
 }
 
 export default function TradingAnalytics() {
@@ -56,6 +57,19 @@ export default function TradingAnalytics() {
   const [error, setError] = useState('');
   const [largeOrders, setLargeOrders] = useState<LargeOrder[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Get the correct API base URL
+  const getApiUrl = () => {
+    if (typeof window !== 'undefined') {
+      // If we're on port 3000 (Next.js dev server), proxy to Flask
+      if (window.location.port === '3000') {
+        return '';
+      }
+      // If we're on the Flask port directly, use full URL
+      return `${window.location.protocol}//${window.location.hostname}:5000`;
+    }
+    return '';
+  };
 
   // Initialize audio for large order alerts
   useEffect(() => {
@@ -68,16 +82,39 @@ export default function TradingAnalytics() {
     }
   };
 
+  // Copy wallet address to search input
+  const copyWhaleWallet = (walletAddr: string) => {
+    setWalletAddress(walletAddr);
+  };
+
+  // Generate mock whale wallets for demo
+  const generateMockWhaleWallet = () => {
+    const mockWallets = [
+      '0x1234567890abcdef1234567890abcdef12345678',
+      '0xabcdef1234567890abcdef1234567890abcdef12',
+      '0x9876543210fedcba9876543210fedcba98765432',
+      '0xfedcba0987654321fedcba0987654321fedcba09',
+      '0x1111111111111111111111111111111111111111'
+    ];
+    return mockWallets[Math.floor(Math.random() * mockWallets.length)];
+  };
+
   // Fetch large orders periodically
   useEffect(() => {
     const fetchLargeOrders = async () => {
       try {
-        const response = await fetch('/api/large-orders');
+        const response = await fetch(`${getApiUrl()}/api/large-orders`);
         const result = await response.json();
         if (result.orders) {
-          const newOrders = result.orders.filter(
+          const ordersWithWallets = result.orders.map((order: LargeOrder) => ({
+            ...order,
+            wallet: generateMockWhaleWallet()
+          }));
+          
+          const newOrders = ordersWithWallets.filter(
             (order: LargeOrder) => !largeOrders.some(existing => existing.timestamp === order.timestamp)
           );
+          
           if (newOrders.length > 0) {
             setLargeOrders(prev => [...newOrders, ...prev].slice(0, 10));
             playAlertSound();
@@ -104,7 +141,7 @@ export default function TradingAnalytics() {
 
     try {
       const spot = tradeType === 'spot';
-      const response = await fetch(`/api/wallet/${walletAddress}?spot=${spot}`);
+      const response = await fetch(`${getApiUrl()}/api/wallet/${walletAddress}?spot=${spot}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -156,6 +193,10 @@ export default function TradingAnalytics() {
     if (seconds < 60) return `${seconds}s ago`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
     return `${Math.floor(seconds / 3600)}h ago`;
+  };
+
+  const truncateWallet = (wallet: string) => {
+    return `${wallet.slice(0, 6)}...${wallet.slice(-4)}`;
   };
 
   return (
@@ -225,20 +266,32 @@ export default function TradingAnalytics() {
         </div>
 
         {/* Live Large Orders Feed */}
-        <div className="max-w-4xl mx-auto mb-8">
+        <div className="max-w-6xl mx-auto mb-8">
           <div className="bg-gradient-to-r from-red-900/50 to-orange-900/50 border border-red-500/30 rounded-lg p-4">
             <h3 className="text-red-300 font-bold mb-3 text-lg tracking-wide">🚨 LIVE WHALE ALERTS ($100K+)</h3>
-            <div className="space-y-2 max-h-32 overflow-y-auto">
+            <div className="space-y-2 max-h-40 overflow-y-auto">
               {largeOrders.length === 0 ? (
                 <p className="text-gray-400 text-sm">Monitoring for large orders...</p>
               ) : (
                 largeOrders.map((order, index) => (
                   <div key={index} className="flex justify-between items-center bg-black/30 rounded px-3 py-2 text-sm">
-                    <span className="text-white font-semibold">{order.symbol}</span>
-                    <span className={order.side === 'BUY' ? 'text-green-400' : 'text-red-400'}>
-                      {order.side} {formatCurrency(order.size)}
-                    </span>
-                    <span className="text-gray-400">{formatTimeAgo(order.timestamp)}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-white font-semibold">{order.symbol}</span>
+                      <span className={order.side === 'BUY' ? 'text-green-400' : 'text-red-400'}>
+                        {order.side} {formatCurrency(order.size)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-gray-400 text-xs">{truncateWallet(order.wallet || '')}</span>
+                      <button
+                        onClick={() => copyWhaleWallet(order.wallet || '')}
+                        className="bg-purple-600 hover:bg-purple-500 text-white px-2 py-1 rounded text-xs font-semibold transition-colors"
+                        title="Copy wallet and search"
+                      >
+                        TRACK
+                      </button>
+                      <span className="text-gray-400 text-xs">{formatTimeAgo(order.timestamp)}</span>
+                    </div>
                   </div>
                 ))
               )}
@@ -286,7 +339,7 @@ export default function TradingAnalytics() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Long Positions */}
               <div className="bg-gradient-to-br from-green-900/20 to-gray-900 border border-green-500/30 rounded-lg p-6">
-                <h3 className="text-green-300 text-xl font-bold mb-4 tracking-wide">🔴 LONG OPERATIONS</h3>
+                <h3 className="text-green-300 text-xl font-bold mb-4 tracking-wide">🟢 LONG OPERATIONS</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-300">Total Operations:</span>
@@ -351,7 +404,7 @@ export default function TradingAnalytics() {
                 <p className="text-green-400 text-2xl font-bold">+{formatCurrency(data.biggestWinner.pnl)}</p>
               </div>
               <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-500/30 rounded-lg p-6">
-                <h3 className="text-gray-300 text-lg font-bold mb-3 tracking-wide">💰 BIGGEST LOSS</h3>
+                <h3 className="text-gray-300 text-lg font-bold mb-3 tracking-wide">💀 BIGGEST LOSS</h3>
                 <p className="text-white font-semibold">{data.biggestLoser.symbol}</p>
                 <p className="text-red-400 text-2xl font-bold">{formatCurrency(data.biggestLoser.pnl)}</p>
               </div>
