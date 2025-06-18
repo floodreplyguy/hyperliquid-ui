@@ -21,8 +21,6 @@ type StatsResponse = {
   realizedPnl: number;
   volume: number;
   fees: number;
-  avgNotional: number;
-  mostTraded: string;
   longs: Record<string, unknown>;
   shorts: Record<string, unknown>;
   biggestOrders: { symbol: string; notional: number }[];
@@ -44,9 +42,7 @@ export default function Home() {
     setError('');
     setStats(null);
     try {
-      const res = await fetch(
-        `https://pnl-dna-evansmargintrad.replit.app/stats?wallet=${wallet}&type=${side}`
-      );
+      const res = await fetch(`https://pnl-dna-evansmargintrad.replit.app/stats?wallet=${wallet}&type=${side}`);
       if (!res.ok) throw new Error(`Backend error: ${res.status}`);
       const data = await res.json();
       setStats(data);
@@ -60,7 +56,6 @@ export default function Home() {
     <main className="max-w-4xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-bold">Hyperliquid Wallet Stats</h1>
 
-      {/* Controls */}
       <div className="flex flex-col md:flex-row gap-4 items-center">
         <input
           className="border px-3 py-2 w-full md:flex-1 rounded"
@@ -72,17 +67,13 @@ export default function Home() {
         <div className="flex gap-2">
           <button
             onClick={() => setSide('spot')}
-            className={`px-4 py-2 rounded border ${
-              side === 'spot' ? 'bg-black text-white' : ''
-            }`}
+            className={`px-4 py-2 rounded border ${side === 'spot' ? 'bg-black text-white' : ''}`}
           >
             Spot
           </button>
           <button
             onClick={() => setSide('perp')}
-            className={`px-4 py-2 rounded border ${
-              side === 'perp' ? 'bg-black text-white' : ''
-            }`}
+            className={`px-4 py-2 rounded border ${side === 'perp' ? 'bg-black text-white' : ''}`}
           >
             Perp
           </button>
@@ -99,7 +90,6 @@ export default function Home() {
 
       {error && <p className="text-red-600">{error}</p>}
 
-      {/* Stats */}
       {stats && (
         <>
           <section className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -110,10 +100,8 @@ export default function Home() {
             <Stat label="Total PnL" value={`$${stats.realizedPnl.toFixed(2)}`} />
             <Stat label="Total Volume" value={`$${stats.volume.toFixed(2)}`} />
             <Stat label="Fees Paid" value={`$${stats.fees.toFixed(2)}`} />
-            <Stat label="Most Traded Coin" value={stats.mostTraded} />
           </section>
 
-          {/* Biggest Trades */}
           <section className="mt-6">
             <h2 className="font-bold mb-2">Biggest Orders (Notional)</h2>
             <ul className="list-disc list-inside text-sm space-y-1">
@@ -124,21 +112,18 @@ export default function Home() {
               ))}
             </ul>
             <p className="mt-3 text-sm">
-              <strong>Biggest Winner:</strong> {stats.biggestWinner.symbol} $
-              {stats.biggestWinner.pnl.toFixed(2)}
+              <strong>Biggest Winner:</strong> {stats.biggestWinner.symbol} ${stats.biggestWinner.pnl.toFixed(2)}
             </p>
             <p className="text-sm">
-              <strong>Biggest Loser:</strong> {stats.biggestLoser.symbol} $
-              {stats.biggestLoser.pnl.toFixed(2)}
+              <strong>Biggest Loser:</strong> {stats.biggestLoser.symbol} ${stats.biggestLoser.pnl.toFixed(2)}
             </p>
           </section>
 
-          {/* PnL Chart */}
           <section className="mt-8">
             <h2 className="font-bold mb-2">PnL Chart (Last 2,000 trades)</h2>
             <Line
               data={{
-                labels: stats.pnlChart.map((_, i) => i + 1),
+                labels: stats.pnlChart.map((p) => p.trade),
                 datasets: [
                   {
                     label: 'PnL (USD)',
