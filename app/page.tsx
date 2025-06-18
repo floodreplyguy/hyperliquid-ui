@@ -14,17 +14,15 @@ import { Line } from 'react-chartjs-2';
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
 
 type StatsResponse = {
-  overall: {
-    totalTrades: number;
-    winRatePercent: number;
-    avgWin: number;
-    avgLoss: number;
-    totalPnl: number;
-    totalVolume: number;
-    feesPaid: number;
-    timeStart: string;
-    timeEnd: string;
-  };
+  totalTrades: number;
+  winRate: number;
+  avgWin: number;
+  avgLoss: number;
+  realizedPnl: number;
+  volume: number;
+  fees: number;
+  avgNotional: number;
+  mostTraded: string;
   longs: Record<string, unknown>;
   shorts: Record<string, unknown>;
   biggestOrders: { symbol: string; notional: number }[];
@@ -46,8 +44,9 @@ export default function Home() {
     setError('');
     setStats(null);
     try {
-      const spotParam = side === 'spot' ? 'true' : 'false';
-      const res = await fetch(`/api/wallet/${wallet}?spot=${spotParam}`);
+      const res = await fetch(
+        `https://pnl-dna-evansmargintrad.replit.app/stats?wallet=${wallet}&type=${side}`
+      );
       if (!res.ok) throw new Error(`Backend error: ${res.status}`);
       const data = await res.json();
       setStats(data);
@@ -104,32 +103,14 @@ export default function Home() {
       {stats && (
         <>
           <section className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <Stat label="Total Trades" value={stats.overall.totalTrades} />
-            <Stat label="Win Rate" value={`${stats.overall.winRatePercent}%`} />
-            <Stat
-              label="Average Win"
-              value={`$${stats.overall.avgWin.toFixed(2)}`}
-            />
-            <Stat
-              label="Average Loss"
-              value={`$${stats.overall.avgLoss.toFixed(2)}`}
-            />
-            <Stat
-              label="Total PnL"
-              value={`$${stats.overall.totalPnl.toFixed(2)}`}
-            />
-            <Stat
-              label="Total Volume"
-              value={`$${stats.overall.totalVolume.toFixed(2)}`}
-            />
-            <Stat
-              label="Fees Paid"
-              value={`$${stats.overall.feesPaid.toFixed(2)}`}
-            />
-            <Stat
-              label="Time Range"
-              value={`${stats.overall.timeStart} → ${stats.overall.timeEnd}`}
-            />
+            <Stat label="Total Trades" value={stats.totalTrades} />
+            <Stat label="Win Rate" value={`${(stats.winRate * 100).toFixed(1)}%`} />
+            <Stat label="Average Win" value={`$${stats.avgWin.toFixed(2)}`} />
+            <Stat label="Average Loss" value={`$${stats.avgLoss.toFixed(2)}`} />
+            <Stat label="Total PnL" value={`$${stats.realizedPnl.toFixed(2)}`} />
+            <Stat label="Total Volume" value={`$${stats.volume.toFixed(2)}`} />
+            <Stat label="Fees Paid" value={`$${stats.fees.toFixed(2)}`} />
+            <Stat label="Most Traded Coin" value={stats.mostTraded} />
           </section>
 
           {/* Biggest Trades */}
@@ -143,12 +124,12 @@ export default function Home() {
               ))}
             </ul>
             <p className="mt-3 text-sm">
-              <strong>Biggest Winner:</strong>{' '}
-              {stats.biggestWinner.symbol} ${stats.biggestWinner.pnl.toFixed(2)}
+              <strong>Biggest Winner:</strong> {stats.biggestWinner.symbol} $
+              {stats.biggestWinner.pnl.toFixed(2)}
             </p>
             <p className="text-sm">
-              <strong>Biggest Loser:</strong>{' '}
-              {stats.biggestLoser.symbol} ${stats.biggestLoser.pnl.toFixed(2)}
+              <strong>Biggest Loser:</strong> {stats.biggestLoser.symbol} $
+              {stats.biggestLoser.pnl.toFixed(2)}
             </p>
           </section>
 
