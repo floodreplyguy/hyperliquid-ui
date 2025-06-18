@@ -3,18 +3,15 @@
 import { useState } from 'react';
 
 interface WalletData {
-  overall: {
-    totalTrades: number;
-    winRatePercent: number;
-    avgWin: number;
-    avgLoss: number;
-    totalPnl: number;
-    totalVolume: number;
-    feesPaid: number;
-    currentStreak: number;
-    timeStart: string;
-    timeEnd: string;
-  };
+  totalTrades: number;
+  winRate: number;
+  avgWin: number;
+  avgLoss: number;
+  realizedPnl: number;
+  volume: number;
+  fees: number;
+  avgNotional: number;
+  mostTraded: string;
   longs: {
     trades: number;
     winRate: number;
@@ -23,6 +20,7 @@ interface WalletData {
     totalPnl: number;
     volume: number;
     fees: number;
+    top3: Record<string, number>;
   };
   shorts: {
     trades: number;
@@ -32,6 +30,7 @@ interface WalletData {
     totalPnl: number;
     volume: number;
     fees: number;
+    top3: Record<string, number>;
   };
   biggestOrders: Array<{ symbol: string; notional: number }>;
   biggestWinner: { symbol: string; pnl: number };
@@ -56,9 +55,7 @@ export default function TradingAnalytics() {
     setError('');
 
     try {
-      const spot = tradeType === 'spot';
-      // Use relative URL - this will work whether you're on Replit or deployed
-      const response = await fetch(`/api/wallet/${walletAddress}?spot=${spot}`);
+      const response = await fetch(`/stats?wallet=${walletAddress}&type=${tradeType}`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -84,216 +81,157 @@ export default function TradingAnalytics() {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(Math.abs(value));
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
   };
 
   const formatPercentage = (value: number) => {
-    return `${value.toFixed(1)}%`;
-  };
-
-  const getStreakDisplay = (streak: number) => {
-    if (streak === 0) return { text: "No Streak", color: "text-gray-400" };
-    const isWin = streak > 0;
-    return {
-      text: `${Math.abs(streak)} ${isWin ? 'WIN' : 'LOSS'} STREAK`,
-      color: isWin ? "text-green-400" : "text-red-400"
-    };
-  };
-
-  const getPnlColor = (pnl: number) => {
-    return pnl >= 0 ? 'text-green-400' : 'text-red-400';
+    return `${(value * 100).toFixed(1)}%`;
   };
 
   return (
-    <div className="min-h-screen bg-black text-white font-mono relative overflow-hidden">
-      {/* Animated background grid */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-black to-red-500/20"></div>
-        <div className="absolute inset-0" style={{
-          backgroundImage: `
-            linear-gradient(rgba(255,140,0,0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,140,0,0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '50px 50px'
-        }}></div>
-      </div>
-
-      <div className="relative z-10 p-4">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-6xl font-bold bg-gradient-to-r from-orange-400 via-red-500 to-orange-600 bg-clip-text text-transparent mb-2">
-            MISSION DEBRIEF
-          </h1>
-          <p className="text-orange-300 text-xl tracking-wider">HYPERLIQUID COMBAT ANALYTICS</p>
-          <div className="mt-4 h-1 bg-gradient-to-r from-transparent via-orange-500 to-transparent"></div>
-        </div>
+    <div className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold text-center mb-8">Hyperliquid Trading Analytics</h1>
 
         {/* Input Section */}
-        <div className="max-w-4xl mx-auto mb-8">
-          <div className="bg-gradient-to-r from-gray-900 to-gray-800 border border-orange-500/30 rounded-lg p-6 shadow-2xl">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <label className="block text-orange-300 text-sm font-semibold mb-2 tracking-wide">
-                  TARGET WALLET ADDRESS
-                </label>
-                <input
-                  type="text"
-                  value={walletAddress}
-                  onChange={(e) => setWalletAddress(e.target.value)}
-                  placeholder="0x..."
-                  className="w-full bg-black border border-orange-500/50 rounded px-4 py-3 text-white focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-orange-300 text-sm font-semibold mb-2 tracking-wide">
-                  OPERATION TYPE
-                </label>
-                <select
-                  value={tradeType}
-                  onChange={(e) => setTradeType(e.target.value as 'perp' | 'spot')}
-                  className="bg-black border border-orange-500/50 rounded px-4 py-3 text-white focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20 transition-all"
-                >
-                  <option value="perp">PERPETUALS</option>
-                  <option value="spot">SPOT TRADING</option>
-                </select>
-              </div>
-              <div className="flex items-end">
-                <button
-                  onClick={fetchWalletData}
-                  disabled={loading}
-                  className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-3 px-8 rounded transition-all transform hover:scale-105 disabled:transform-none shadow-lg"
-                >
-                  {loading ? 'ANALYZING...' : 'EXECUTE'}
-                </button>
-              </div>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Wallet Address
+              </label>
+              <input
+                type="text"
+                value={walletAddress}
+                onChange={(e) => setWalletAddress(e.target.value)}
+                placeholder="Enter wallet address"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Trade Type
+              </label>
+              <select
+                value={tradeType}
+                onChange={(e) => setTradeType(e.target.value as 'perp' | 'spot')}
+                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="perp">Perpetuals</option>
+                <option value="spot">Spot</option>
+              </select>
+            </div>
+            <button
+              onClick={fetchWalletData}
+              disabled={loading}
+              className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-medium py-2 px-6 rounded-md transition-colors"
+            >
+              {loading ? 'Loading...' : 'Analyze'}
+            </button>
           </div>
         </div>
 
         {/* Error Display */}
         {error && (
-          <div className="max-w-4xl mx-auto mb-8">
-            <div className="bg-red-900/50 border border-red-500 rounded-lg p-4">
-              <p className="text-red-300">⚠️ MISSION FAILED: {error}</p>
-            </div>
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-8">
+            Error: {error}
           </div>
         )}
 
         {/* Results */}
         {data && (
-          <div className="max-w-7xl mx-auto space-y-8">
-            {/* Main Stats */}
+          <div className="space-y-8">
+            {/* Overview Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-orange-500/30 rounded-lg p-6 text-center">
-                <h3 className="text-orange-300 text-sm font-semibold mb-2 tracking-wide">TOTAL OPERATIONS</h3>
-                <p className="text-4xl font-bold text-white">{data.overall.totalTrades}</p>
+              <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                <h3 className="text-lg font-semibold mb-2">Total Trades</h3>
+                <p className="text-3xl font-bold text-blue-600">{data.totalTrades}</p>
               </div>
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-green-500/30 rounded-lg p-6 text-center">
-                <h3 className="text-green-300 text-sm font-semibold mb-2 tracking-wide">SUCCESS RATE</h3>
-                <p className="text-4xl font-bold text-green-400">{formatPercentage(data.overall.winRatePercent)}</p>
+              <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                <h3 className="text-lg font-semibold mb-2">Win Rate</h3>
+                <p className="text-3xl font-bold text-green-600">{formatPercentage(data.winRate)}</p>
               </div>
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-blue-500/30 rounded-lg p-6 text-center">
-                <h3 className="text-blue-300 text-sm font-semibold mb-2 tracking-wide">NET P&L</h3>
-                <p className={`text-4xl font-bold ${getPnlColor(data.overall.totalPnl)}`}>
-                  {data.overall.totalPnl >= 0 ? '+' : ''}{formatCurrency(data.overall.totalPnl)}
+              <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                <h3 className="text-lg font-semibold mb-2">Realized PnL</h3>
+                <p className={`text-3xl font-bold ${data.realizedPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(data.realizedPnl)}
                 </p>
               </div>
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-purple-500/30 rounded-lg p-6 text-center">
-                <h3 className="text-purple-300 text-sm font-semibold mb-2 tracking-wide">CURRENT STREAK</h3>
-                <p className={`text-3xl font-bold ${getStreakDisplay(data.overall.currentStreak).color}`}>
-                  {getStreakDisplay(data.overall.currentStreak).text}
-                </p>
+              <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                <h3 className="text-lg font-semibold mb-2">Total Volume</h3>
+                <p className="text-3xl font-bold text-purple-600">{formatCurrency(data.volume)}</p>
               </div>
             </div>
 
-            {/* Detailed Stats */}
+            {/* Long vs Short Stats */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Long Positions */}
-              <div className="bg-gradient-to-br from-green-900/20 to-gray-900 border border-green-500/30 rounded-lg p-6">
-                <h3 className="text-green-300 text-xl font-bold mb-4 tracking-wide">🟢 LONG OPERATIONS</h3>
-                <div className="space-y-3">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-xl font-semibold mb-4 text-green-600">Long Positions</h3>
+                <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Total Operations:</span>
-                    <span className="text-white font-semibold">{data.longs.trades}</span>
+                    <span>Trades:</span>
+                    <span className="font-semibold">{data.longs.trades}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Success Rate:</span>
-                    <span className="text-green-400 font-semibold">{formatPercentage(data.longs.winRate * 100)}</span>
+                    <span>Win Rate:</span>
+                    <span className="font-semibold">{formatPercentage(data.longs.winRate)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Avg Win:</span>
-                    <span className="text-green-400 font-semibold">+{formatCurrency(data.longs.avgWin)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Avg Loss:</span>
-                    <span className="text-red-400 font-semibold">{formatCurrency(data.longs.avgLoss)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Total P&L:</span>
-                    <span className={`font-semibold ${getPnlColor(data.longs.totalPnl)}`}>
-                      {data.longs.totalPnl >= 0 ? '+' : ''}{formatCurrency(data.longs.totalPnl)}
+                    <span>Total PnL:</span>
+                    <span className={`font-semibold ${data.longs.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatCurrency(data.longs.totalPnl)}
                     </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Volume:</span>
+                    <span className="font-semibold">{formatCurrency(data.longs.volume)}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Short Positions */}
-              <div className="bg-gradient-to-br from-red-900/20 to-gray-900 border border-red-500/30 rounded-lg p-6">
-                <h3 className="text-red-300 text-xl font-bold mb-4 tracking-wide">🔴 SHORT OPERATIONS</h3>
-                <div className="space-y-3">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-xl font-semibold mb-4 text-red-600">Short Positions</h3>
+                <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Total Operations:</span>
-                    <span className="text-white font-semibold">{data.shorts.trades}</span>
+                    <span>Trades:</span>
+                    <span className="font-semibold">{data.shorts.trades}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Success Rate:</span>
-                    <span className="text-green-400 font-semibold">{formatPercentage(data.shorts.winRate * 100)}</span>
+                    <span>Win Rate:</span>
+                    <span className="font-semibold">{formatPercentage(data.shorts.winRate)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Avg Win:</span>
-                    <span className="text-green-400 font-semibold">+{formatCurrency(data.shorts.avgWin)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Avg Loss:</span>
-                    <span className="text-red-400 font-semibold">{formatCurrency(data.shorts.avgLoss)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Total P&L:</span>
-                    <span className={`font-semibold ${getPnlColor(data.shorts.totalPnl)}`}>
-                      {data.shorts.totalPnl >= 0 ? '+' : ''}{formatCurrency(data.shorts.totalPnl)}
+                    <span>Total PnL:</span>
+                    <span className={`font-semibold ${data.shorts.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatCurrency(data.shorts.totalPnl)}
                     </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Volume:</span>
+                    <span className="font-semibold">{formatCurrency(data.shorts.volume)}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Notable Achievements */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-yellow-900/20 to-gray-900 border border-yellow-500/30 rounded-lg p-6">
-                <h3 className="text-yellow-300 text-lg font-bold mb-3 tracking-wide">🏆 BIGGEST WIN</h3>
-                <p className="text-white font-semibold">{data.biggestWinner.symbol}</p>
-                <p className="text-green-400 text-2xl font-bold">+{formatCurrency(data.biggestWinner.pnl)}</p>
+            {/* Additional Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold mb-3">Biggest Winner</h3>
+                <p className="font-medium">{data.biggestWinner.symbol}</p>
+                <p className="text-2xl font-bold text-green-600">{formatCurrency(data.biggestWinner.pnl)}</p>
               </div>
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-500/30 rounded-lg p-6">
-                <h3 className="text-gray-300 text-lg font-bold mb-3 tracking-wide">💀 BIGGEST LOSS</h3>
-                <p className="text-white font-semibold">{data.biggestLoser.symbol}</p>
-                <p className="text-red-400 text-2xl font-bold">{formatCurrency(data.biggestLoser.pnl)}</p>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold mb-3">Biggest Loser</h3>
+                <p className="font-medium">{data.biggestLoser.symbol}</p>
+                <p className="text-2xl font-bold text-red-600">{formatCurrency(data.biggestLoser.pnl)}</p>
               </div>
-              <div className="bg-gradient-to-br from-blue-900/20 to-gray-900 border border-blue-500/30 rounded-lg p-6">
-                <h3 className="text-blue-300 text-lg font-bold mb-3 tracking-wide">📊 TOTAL VOLUME</h3>
-                <p className="text-blue-400 text-2xl font-bold">{formatCurrency(data.overall.totalVolume)}</p>
-                <p className="text-gray-400 text-sm mt-1">Fees Paid: {formatCurrency(data.overall.feesPaid)}</p>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold mb-3">Most Traded</h3>
+                <p className="text-2xl font-bold text-blue-600">{data.mostTraded}</p>
               </div>
-            </div>
-
-            {/* Mission Period */}
-            <div className="bg-gradient-to-r from-gray-900 to-gray-800 border border-orange-500/30 rounded-lg p-6 text-center">
-              <h3 className="text-orange-300 text-lg font-bold mb-2 tracking-wide">MISSION TIMEFRAME</h3>
-              <p className="text-white text-xl">
-                {data.overall.timeStart} → {data.overall.timeEnd}
-              </p>
             </div>
           </div>
         )}
