@@ -2,7 +2,18 @@
 
 import { useState } from 'react';
 
-interface WalletData {
+interface TradeStats {
+  trades: number;
+  winRate: number;
+  avgWin: number;
+  avgLoss: number;
+  totalPnl: number;
+  volume: number;
+  fees: number;
+  top3: Record<string, number>;
+}
+
+interface ApiResponse {
   totalTrades: number;
   winRate: number;
   avgWin: number;
@@ -12,230 +23,152 @@ interface WalletData {
   fees: number;
   avgNotional: number;
   mostTraded: string;
-  longs: {
-    trades: number;
-    winRate: number;
-    avgWin: number;
-    avgLoss: number;
-    totalPnl: number;
-    volume: number;
-    fees: number;
-    top3: Record<string, number>;
-  };
-  shorts: {
-    trades: number;
-    winRate: number;
-    avgWin: number;
-    avgLoss: number;
-    totalPnl: number;
-    volume: number;
-    fees: number;
-    top3: Record<string, number>;
-  };
-  biggestOrders: Array<{ symbol: string; notional: number }>;
+  longs: TradeStats;
+  shorts: TradeStats;
+  biggestOrders: { symbol: string; notional: number }[];
   biggestWinner: { symbol: string; pnl: number };
   biggestLoser: { symbol: string; pnl: number };
-  pnlChart: Array<{ trade: number; pnl: number }>;
+  pnlChart: { trade: number; pnl: number }[];
 }
 
-export default function TradingAnalytics() {
-  const [walletAddress, setWalletAddress] = useState('');
-  const [tradeType, setTradeType] = useState<'perp' | 'spot'>('perp');
-  const [data, setData] = useState<WalletData | null>(null);
+export default function Home() {
+  const [wallet, setWallet] = useState('');
+  const [type, setType] = useState<'perp' | 'spot'>('perp');
+  const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const fetchWalletData = async () => {
-    if (!walletAddress.trim()) {
+  const fetchStats = async () => {
+    if (!wallet.trim()) {
       setError('Please enter a wallet address');
       return;
     }
 
     setLoading(true);
     setError('');
+    setData(null);
 
     try {
-      const response = await fetch(`/stats?wallet=${walletAddress}&type=${tradeType}`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      if (result.error) {
-        throw new Error(result.error);
-      }
-
-      setData(result);
-    } catch (err) {
-      console.error('Fetch error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      setData(null);
+      const res = await fetch(`https://pnl-dna-evansmargintrad.replit.app/stats?wallet=${wallet}&type=${type}`);
+      if (!res.ok) throw new Error(`Backend error: ${res.status}`);
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      setData(json);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  };
-
-  const formatPercentage = (value: number) => {
-    return `${(value * 100).toFixed(1)}%`;
-  };
+  const format = (n: number) =>
+    new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(n);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-8">Hyperliquid Trading Analytics</h1>
+    <main className="max-w-5xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Hyperliquid Wallet Stats</h1>
 
-        {/* Input Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Wallet Address
-              </label>
-              <input
-                type="text"
-                value={walletAddress}
-                onChange={(e) => setWalletAddress(e.target.value)}
-                placeholder="Enter wallet address"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Trade Type
-              </label>
-              <select
-                value={tradeType}
-                onChange={(e) => setTradeType(e.target.value as 'perp' | 'spot')}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="perp">Perpetuals</option>
-                <option value="spot">Spot</option>
-              </select>
-            </div>
-            <button
-              onClick={fetchWalletData}
-              disabled={loading}
-              className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-medium py-2 px-6 rounded-md transition-colors"
-            >
-              {loading ? 'Loading...' : 'Analyze'}
-            </button>
-          </div>
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-8">
-            Error: {error}
-          </div>
-        )}
-
-        {/* Results */}
-        {data && (
-          <div className="space-y-8">
-            {/* Overview Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                <h3 className="text-lg font-semibold mb-2">Total Trades</h3>
-                <p className="text-3xl font-bold text-blue-600">{data.totalTrades}</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                <h3 className="text-lg font-semibold mb-2">Win Rate</h3>
-                <p className="text-3xl font-bold text-green-600">{formatPercentage(data.winRate)}</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                <h3 className="text-lg font-semibold mb-2">Realized PnL</h3>
-                <p className={`text-3xl font-bold ${data.realizedPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(data.realizedPnl)}
-                </p>
-              </div>
-              <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                <h3 className="text-lg font-semibold mb-2">Total Volume</h3>
-                <p className="text-3xl font-bold text-purple-600">{formatCurrency(data.volume)}</p>
-              </div>
-            </div>
-
-            {/* Long vs Short Stats */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-xl font-semibold mb-4 text-green-600">Long Positions</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Trades:</span>
-                    <span className="font-semibold">{data.longs.trades}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Win Rate:</span>
-                    <span className="font-semibold">{formatPercentage(data.longs.winRate)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total PnL:</span>
-                    <span className={`font-semibold ${data.longs.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(data.longs.totalPnl)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Volume:</span>
-                    <span className="font-semibold">{formatCurrency(data.longs.volume)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-xl font-semibold mb-4 text-red-600">Short Positions</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Trades:</span>
-                    <span className="font-semibold">{data.shorts.trades}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Win Rate:</span>
-                    <span className="font-semibold">{formatPercentage(data.shorts.winRate)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total PnL:</span>
-                    <span className={`font-semibold ${data.shorts.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(data.shorts.totalPnl)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Volume:</span>
-                    <span className="font-semibold">{formatCurrency(data.shorts.volume)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Additional Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold mb-3">Biggest Winner</h3>
-                <p className="font-medium">{data.biggestWinner.symbol}</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(data.biggestWinner.pnl)}</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold mb-3">Biggest Loser</h3>
-                <p className="font-medium">{data.biggestLoser.symbol}</p>
-                <p className="text-2xl font-bold text-red-600">{formatCurrency(data.biggestLoser.pnl)}</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold mb-3">Most Traded</h3>
-                <p className="text-2xl font-bold text-blue-600">{data.mostTraded}</p>
-              </div>
-            </div>
-          </div>
-        )}
+      <div className="flex flex-col md:flex-row gap-4 mb-6 items-end">
+        <input
+          className="border p-2 rounded w-full md:flex-1"
+          placeholder="Enter wallet address"
+          value={wallet}
+          onChange={(e) => setWallet(e.target.value.trim())}
+        />
+        <select
+          className="border p-2 rounded"
+          value={type}
+          onChange={(e) => setType(e.target.value as 'perp' | 'spot')}
+        >
+          <option value="perp">Perp</option>
+          <option value="spot">Spot</option>
+        </select>
+        <button
+          onClick={fetchStats}
+          disabled={loading}
+          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+        >
+          {loading ? 'Loading...' : 'Fetch'}
+        </button>
       </div>
+
+      {error && <p className="text-red-600 mb-6">Error: {error}</p>}
+
+      {data && (
+        <div className="space-y-8">
+          <section>
+            <h2 className="text-xl font-bold mb-3">Overview</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+              <Stat label="Total Trades" value={data.totalTrades} />
+              <Stat label="Win Rate" value={`${(data.winRate * 100).toFixed(1)}%`} />
+              <Stat label="Avg Win" value={`$${format(data.avgWin)}`} />
+              <Stat label="Avg Loss" value={`$${format(data.avgLoss)}`} />
+              <Stat label="Realized PnL" value={`$${format(data.realizedPnl)}`} />
+              <Stat label="Volume" value={`$${format(data.volume)}`} />
+              <Stat label="Fees" value={`$${format(data.fees)}`} />
+              <Stat label="Avg Notional" value={`$${format(data.avgNotional)}`} />
+              <Stat label="Most Traded" value={data.mostTraded} />
+            </div>
+          </section>
+
+          <section>
+            <h2 className="font-bold text-lg mb-2">Longs</h2>
+            <SideStats stats={data.longs} />
+          </section>
+
+          <section>
+            <h2 className="font-bold text-lg mb-2">Shorts</h2>
+            <SideStats stats={data.shorts} />
+          </section>
+
+          <section>
+            <h2 className="font-bold text-lg mb-2">Biggest Orders</h2>
+            <ul className="list-disc list-inside text-sm">
+              {data.biggestOrders.map((o, i) => (
+                <li key={i}>
+                  {o.symbol}: ${format(o.notional)}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="text-sm">
+            <p>
+              <strong>Biggest Winner:</strong> {data.biggestWinner.symbol} — ${format(data.biggestWinner.pnl)}
+            </p>
+            <p>
+              <strong>Biggest Loser:</strong> {data.biggestLoser.symbol} — ${format(data.biggestLoser.pnl)}
+            </p>
+          </section>
+        </div>
+      )}
+    </main>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="border rounded p-3">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-base font-medium">{value}</p>
+    </div>
+  );
+}
+
+function SideStats({ stats }: { stats: any }) {
+  const format = (n: number) =>
+    new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(n);
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+      <Stat label="Trades" value={stats.trades} />
+      <Stat label="Win Rate" value={`${(stats.winRate * 100).toFixed(1)}%`} />
+      <Stat label="Avg Win" value={`$${format(stats.avgWin)}`} />
+      <Stat label="Avg Loss" value={`$${format(stats.avgLoss)}`} />
+      <Stat label="Total PnL" value={`$${format(stats.totalPnl)}`} />
+      <Stat label="Volume" value={`$${format(stats.volume)}`} />
+      <Stat label="Fees" value={`$${format(stats.fees)}`} />
+      <Stat label="Top 3 Symbols" value={Object.entries(stats.top3).map(([s, n]) => `${s} (${n})`).join(', ')} />
     </div>
   );
 }
