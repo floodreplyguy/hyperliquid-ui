@@ -46,9 +46,8 @@ export default function Home() {
     setError('');
     setStats(null);
     try {
-      const res = await fetch(
-        `https://pnl-dna-evansmargintrad.replit.app/stats?wallet=${wallet}&type=${side}`
-      );
+      const spotParam = side === 'spot' ? 'true' : 'false';
+      const res = await fetch(`/api/wallet/${wallet}?spot=${spotParam}`);
       if (!res.ok) throw new Error(`Backend error: ${res.status}`);
       const data = await res.json();
       setStats(data);
@@ -155,7 +154,7 @@ export default function Home() {
 
           {/* PnL Chart */}
           <section className="mt-8">
-            <h2 className="font-bold mb-2">PnL Chart (Last 2 000 trades)</h2>
+            <h2 className="font-bold mb-2">PnL Chart (Last 2,000 trades)</h2>
             <Line
               data={{
                 labels: stats.pnlChart.map((_, i) => i + 1),
