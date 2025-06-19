@@ -30,7 +30,7 @@ export default function WhaleWatcher() {
         const data = JSON.parse(event.data);
         if (!data?.data?.fills) return;
         const newFills = data.data.fills
-          .filter((f: any) => f.notional >= 100_000)
+          .filter((f: any) => f.notional >= 10_000)
           .map((f: any) => ({
             symbol: f.coin,
             notional: f.notional,
