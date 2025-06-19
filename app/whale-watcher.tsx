@@ -16,6 +16,43 @@ export default function WhaleWatcher() {
   const [connected, setConnected] = useState(false);
   const [threshold, setThreshold] = useState(50000); // Default 50K
 
+  // Sound effect function
+  const playTradeSound = (notional: number) => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const frequency = 800; // Base frequency for the "bling" sound
+      const duration = 0.15; // Duration of each beep
+      
+      // Determine number of beeps based on trade size
+      let beepCount = 1;
+      if (notional >= 200000) beepCount = 3; // Triple bling for 200K+
+      else if (notional >= 100000) beepCount = 2; // Double bling for 100K+
+      
+      for (let i = 0; i < beepCount; i++) {
+        setTimeout(() => {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.frequency.value = frequency;
+          oscillator.type = 'sine';
+          
+          // Quick attack and decay for bling effect
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+          gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+          
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + duration);
+        }, i * 200); // 200ms delay between beeps
+      }
+    } catch (error) {
+      console.log('Audio not available:', error);
+    }
+  };
+
   useEffect(() => {
     console.log('Attempting to connect to Hyperliquid WebSocket...');
     const ws = new WebSocket('wss://api.hyperliquid.xyz/ws');
@@ -64,6 +101,11 @@ export default function WhaleWatcher() {
             })) as WhaleTrade[];
 
           if (newFills.length > 0) {
+            // Play sound for the largest trade in this batch
+            const largestTrade = newFills.reduce((max, trade) => 
+              trade.notional > max.notional ? trade : max, newFills[0]);
+            playTradeSound(largestTrade.notional);
+            
             setTrades((prev) => [...newFills, ...prev.slice(0, 29)]);
           }
         }
@@ -104,8 +146,8 @@ export default function WhaleWatcher() {
   };
 
   return (
-    <div className="fixed top-20 right-4 w-[350px] max-h-[90vh] overflow-y-auto bg-green-900 shadow-lg rounded-lg border border-green-700 z-50">
-      <div className="p-3 border-b font-semibold bg-green-800 text-white rounded-t-lg">
+    <div className="fixed top-20 right-4 w-[350px] max-h-[90vh] overflow-y-auto bg-gray-800 shadow-lg rounded-lg border border-gray-600 z-50">
+      <div className="p-3 border-b font-semibold bg-gray-700 text-white rounded-t-lg">
         <div className="flex justify-between items-center mb-2">
           <span>Whale Trades (${(threshold/1000).toFixed(0)}K+)</span>
           <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`}></div>
