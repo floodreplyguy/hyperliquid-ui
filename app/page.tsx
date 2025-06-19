@@ -49,19 +49,6 @@ interface ApiResponse {
   positionTendency: string;
   recentLongs: number;
   recentShorts: number;
-  tradeConfidence: number;
-  predictionFactors: {
-    overall_win_rate: number;
-    recent_win_rate: number;
-    recent_pnl_positive: boolean;
-    current_streak: number;
-    streak_type: string;
-    has_good_hours: boolean;
-    best_hours: number[];
-    best_days: string[];
-    best_sessions: string[];
-    position_consistency: number;
-  };
   timeBreakdown: {
     days: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
     sessions: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
@@ -148,33 +135,6 @@ export default function Page() {
               <p className="text-xs text-gray-400 mt-1">
                 {stats.recentLongs}L / {stats.recentShorts}S
               </p>
-            </div>
-            <div className="border rounded p-3 bg-white">
-              <p className="text-xs text-gray-500 mb-1">Next Trade Confidence</p>
-              <p className={`text-lg font-bold ${
-                stats.tradeConfidence >= 70 ? 'text-green-600' : 
-                stats.tradeConfidence >= 50 ? 'text-yellow-600' : 'text-red-600'
-              }`}>
-                {stats.tradeConfidence}%
-              </p>
-              <div className="text-xs text-gray-400 mt-1 space-y-1">
-                {stats.predictionFactors?.streak_type === 'win' && (stats.predictionFactors?.current_streak || 0) >= 3 && (
-                  <p className="text-green-600">🔥 Win streak: {stats.predictionFactors.current_streak}</p>
-                )}
-                {stats.predictionFactors?.streak_type === 'loss' && (stats.predictionFactors?.current_streak || 0) >= 3 && (
-                  <p className="text-red-600">❄️ Loss streak: {stats.predictionFactors.current_streak}</p>
-                )}
-                {stats.predictionFactors?.best_days && stats.predictionFactors.best_days.length > 0 && (
-                  <p className="text-green-600">📅 Best days: {stats.predictionFactors.best_days.join(', ')}</p>
-                )}
-                {stats.predictionFactors?.best_sessions && stats.predictionFactors.best_sessions.length > 0 && (
-                  <p className="text-blue-600">🌍 Best sessions: {stats.predictionFactors.best_sessions.join(', ')}</p>
-                )}
-                {stats.predictionFactors?.has_good_hours && (
-                  <p className="text-purple-600">⏰ Good hours: {stats.predictionFactors.best_hours?.join(', ')}:00 UTC</p>
-                )}
-                <p>Recent: {((stats.predictionFactors?.recent_win_rate || 0) * 100).toFixed(0)}% wins</p>
-              </div>
             </div>
           </StatsGrid>
 
