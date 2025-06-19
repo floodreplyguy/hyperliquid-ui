@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 interface WhaleTrade {
   symbol: string;
   notional: number;
+  price: number;
   dir: 'A' | 'B';
   wallet: string;
   timestamp: number;
@@ -52,8 +53,9 @@ export default function WhaleWatcher() {
             .map((f: any) => ({
               symbol: f.coin || 'BTC',
               notional: parseFloat(f.sz) * parseFloat(f.px),
+              price: parseFloat(f.px),
               dir: f.side === 'A' ? 'A' : 'B',
-              wallet: f.user && f.user !== 'Unknown' ? f.user : `0x${Math.random().toString(16).substr(2, 8)}...`,
+              wallet: f.users && f.users.length > 0 ? f.users[0] : `0x${Math.random().toString(16).substr(2, 8)}...`,
               timestamp: f.time || Date.now(),
             })) as WhaleTrade[];
 
@@ -113,18 +115,18 @@ export default function WhaleWatcher() {
             <li key={i} className={`flex justify-between items-center px-3 py-2 border-l-4 ${
               trade.dir === 'B' ? 'border-green-500' : 'border-red-500'
             }`}>
-              <div>
+              <div className="flex-1">
                 <div className="font-medium">{trade.symbol}</div>
                 <div className="text-xs text-gray-500">
-                  {formatUsd(trade.notional)}
+                  {formatUsd(trade.notional)} @ ${trade.price.toLocaleString()}
                 </div>
               </div>
               <button
                 onClick={() => navigator.clipboard.writeText(trade.wallet)}
-                className="text-blue-500 hover:underline text-xs max-w-20 truncate"
-                title={trade.wallet}
+                className="text-blue-500 hover:underline text-xs ml-2 flex-shrink-0"
+                title={`Click to copy: ${trade.wallet}`}
               >
-                {trade.wallet.substring(0, 6)}...
+                {trade.wallet.length > 10 ? `${trade.wallet.substring(0, 6)}...${trade.wallet.substring(trade.wallet.length - 4)}` : trade.wallet}
               </button>
             </li>
           ))
