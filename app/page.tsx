@@ -151,16 +151,16 @@ export default function Page() {
                 {stats.tradeConfidence}%
               </p>
               <div className="text-xs text-gray-400 mt-1 space-y-1">
-                {stats.predictionFactors.streak_type === 'win' && stats.predictionFactors.current_streak >= 3 && (
+                {stats.predictionFactors?.streak_type === 'win' && (stats.predictionFactors?.current_streak || 0) >= 3 && (
                   <p className="text-green-600">🔥 Win streak: {stats.predictionFactors.current_streak}</p>
                 )}
-                {stats.predictionFactors.streak_type === 'loss' && stats.predictionFactors.current_streak >= 3 && (
+                {stats.predictionFactors?.streak_type === 'loss' && (stats.predictionFactors?.current_streak || 0) >= 3 && (
                   <p className="text-red-600">❄️ Loss streak: {stats.predictionFactors.current_streak}</p>
                 )}
-                {stats.predictionFactors.has_good_hours && (
-                  <p className="text-blue-600">⏰ Good hours: {stats.predictionFactors.best_hours.join(', ')}:00 UTC</p>
+                {stats.predictionFactors?.has_good_hours && (
+                  <p className="text-blue-600">⏰ Good hours: {stats.predictionFactors.best_hours?.join(', ')}:00 UTC</p>
                 )}
-                <p>Recent: {(stats.predictionFactors.recent_win_rate * 100).toFixed(0)}% wins</p>
+                <p>Recent: {((stats.predictionFactors?.recent_win_rate || 0) * 100).toFixed(0)}% wins</p>
               </div>
             </div>
           </StatsGrid>
