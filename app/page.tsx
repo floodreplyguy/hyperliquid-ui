@@ -58,7 +58,14 @@ interface ApiResponse {
     streak_type: string;
     has_good_hours: boolean;
     best_hours: number[];
+    best_days: string[];
+    best_sessions: string[];
     position_consistency: number;
+  };
+  timeBreakdown: {
+    days: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
+    sessions: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
+    hours: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
   };
 }
 
@@ -157,8 +164,14 @@ export default function Page() {
                 {stats.predictionFactors?.streak_type === 'loss' && (stats.predictionFactors?.current_streak || 0) >= 3 && (
                   <p className="text-red-600">❄️ Loss streak: {stats.predictionFactors.current_streak}</p>
                 )}
+                {stats.predictionFactors?.best_days && stats.predictionFactors.best_days.length > 0 && (
+                  <p className="text-green-600">📅 Best days: {stats.predictionFactors.best_days.join(', ')}</p>
+                )}
+                {stats.predictionFactors?.best_sessions && stats.predictionFactors.best_sessions.length > 0 && (
+                  <p className="text-blue-600">🌍 Best sessions: {stats.predictionFactors.best_sessions.join(', ')}</p>
+                )}
                 {stats.predictionFactors?.has_good_hours && (
-                  <p className="text-blue-600">⏰ Good hours: {stats.predictionFactors.best_hours?.join(', ')}:00 UTC</p>
+                  <p className="text-purple-600">⏰ Good hours: {stats.predictionFactors.best_hours?.join(', ')}:00 UTC</p>
                 )}
                 <p>Recent: {((stats.predictionFactors?.recent_win_rate || 0) * 100).toFixed(0)}% wins</p>
               </div>
@@ -169,6 +182,86 @@ export default function Page() {
             <SideCard side="Longs" data={stats.longs} />
             <SideCard side="Shorts" data={stats.shorts} />
           </div>
+
+          <section>
+            <h2 className="text-xl font-bold mb-3">Time-Based Performance Analysis</h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              
+              {/* Days of Week */}
+              <div className="bg-white border rounded-lg p-4">
+                <h3 className="font-semibold mb-3 text-green-600">📅 Days of Week</h3>
+                <div className="space-y-2 text-sm">
+                  {Object.entries(stats.timeBreakdown?.days || {}).map(([day, data]) => (
+                    <div key={day} className="flex justify-between items-center">
+                      <span className={`${data.trades >= 10 && data.winRate > 0.55 && data.avgPnl > 0 ? 'font-bold text-green-600' : ''}`}>
+                        {day.slice(0, 3)}
+                      </span>
+                      <div className="text-right">
+                        <div>{data.trades} trades</div>
+                        <div className={`${data.winRate > 0.55 ? 'text-green-600' : data.winRate < 0.45 ? 'text-red-600' : 'text-gray-600'}`}>
+                          {(data.winRate * 100).toFixed(0)}% wins
+                        </div>
+                        <div className={`${data.avgPnl > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {usd(data.avgPnl)} avg
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Trading Sessions */}
+              <div className="bg-white border rounded-lg p-4">
+                <h3 className="font-semibold mb-3 text-blue-600">🌍 Trading Sessions</h3>
+                <div className="space-y-2 text-sm">
+                  {Object.entries(stats.timeBreakdown?.sessions || {}).map(([session, data]) => (
+                    <div key={session} className="flex justify-between items-center">
+                      <span className={`${data.trades >= 15 && data.winRate > 0.55 && data.avgPnl > 0 ? 'font-bold text-blue-600' : ''}`}>
+                        {session}
+                      </span>
+                      <div className="text-right">
+                        <div>{data.trades} trades</div>
+                        <div className={`${data.winRate > 0.55 ? 'text-green-600' : data.winRate < 0.45 ? 'text-red-600' : 'text-gray-600'}`}>
+                          {(data.winRate * 100).toFixed(0)}% wins
+                        </div>
+                        <div className={`${data.avgPnl > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {usd(data.avgPnl)} avg
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="text-xs text-gray-500 mt-2">
+                    <div>Asia: 0-8 UTC</div>
+                    <div>Europe: 8-16 UTC</div>
+                    <div>US: 16-24 UTC</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Best Hours */}
+              <div className="bg-white border rounded-lg p-4">
+                <h3 className="font-semibold mb-3 text-purple-600">⏰ Hour Performance</h3>
+                <div className="space-y-1 text-sm max-h-64 overflow-y-auto">
+                  {Object.entries(stats.timeBreakdown?.hours || {})
+                    .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                    .map(([hour, data]) => (
+                    <div key={hour} className="flex justify-between items-center">
+                      <span className={`${data.trades >= 5 && data.winRate > 0.6 && data.avgPnl > 0 ? 'font-bold text-purple-600' : ''}`}>
+                        {hour}:00
+                      </span>
+                      <div className="text-right">
+                        <span className="text-xs">{data.trades}</span>
+                        <span className={`ml-2 ${data.winRate > 0.6 ? 'text-green-600' : data.winRate < 0.4 ? 'text-red-600' : 'text-gray-600'}`}>
+                          {(data.winRate * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </section>
 
           <section>
             <h2 className="text-xl font-bold mb-3">Cumulative PnL (last 2 000 trades)</h2>
