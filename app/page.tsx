@@ -17,7 +17,15 @@ import { Line } from 'react-chartjs-2';
 // 🐳 Whale watcher runs only in the browser (WebSocket, clipboard)
 const WhaleWatcher = dynamic(() => import('./whale-watcher'), { ssr: false });
 
-ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Legend, Filler);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 /* ───────── Types ───────── */
 interface TradeStats {
