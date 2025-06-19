@@ -14,7 +14,7 @@ interface WhaleTrade {
 export default function WhaleWatcher() {
   const [trades, setTrades] = useState<WhaleTrade[]>([]);
   const [connected, setConnected] = useState(false);
-  const [threshold, setThreshold] = useState(100000); // Default 100K
+  const [threshold, setThreshold] = useState(50000); // Default 50K
 
   useEffect(() => {
     console.log('Attempting to connect to Hyperliquid WebSocket...');
@@ -29,14 +29,17 @@ export default function WhaleWatcher() {
           type: 'allMids'
         }
       }));
-      // Also try the fills subscription
-      ws.send(JSON.stringify({
-        method: 'subscribe',
-        subscription: {
-          type: 'trades',
-          coin: 'BTC'
-        }
-      }));
+      // Subscribe to multiple coins
+      const coins = ['BTC', 'ETH', 'SOL', 'HYPE'];
+      coins.forEach(coin => {
+        ws.send(JSON.stringify({
+          method: 'subscribe',
+          subscription: {
+            type: 'trades',
+            coin: coin
+          }
+        }));
+      });
     };
 
     ws.onmessage = (event) => {
@@ -87,20 +90,33 @@ export default function WhaleWatcher() {
 
   const formatUsd = (n: number) => `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
+  const getBackgroundColor = (trade: WhaleTrade) => {
+    const intensity = Math.min(trade.notional / 500000, 1); // Max intensity at 500K
+    if (trade.dir === 'B') {
+      // Buy orders - green
+      const greenValue = Math.floor(100 + (155 * intensity)); // 100-255 range
+      return `rgb(0, ${greenValue}, 0)`;
+    } else {
+      // Sell orders - red
+      const redValue = Math.floor(100 + (155 * intensity)); // 100-255 range
+      return `rgb(${redValue}, 0, 0)`;
+    }
+  };
+
   return (
-    <div className="fixed top-20 right-4 w-[350px] max-h-[90vh] overflow-y-auto bg-white shadow-lg rounded-lg border border-gray-300 z-50">
-      <div className="p-3 border-b font-semibold bg-black text-white rounded-t-lg">
+    <div className="fixed top-20 right-4 w-[350px] max-h-[90vh] overflow-y-auto bg-green-900 shadow-lg rounded-lg border border-green-700 z-50">
+      <div className="p-3 border-b font-semibold bg-green-800 text-white rounded-t-lg">
         <div className="flex justify-between items-center mb-2">
           <span>Whale Trades (${(threshold/1000).toFixed(0)}K+)</span>
           <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`}></div>
         </div>
         <div className="flex items-center gap-2 text-xs">
-          <span>$100K</span>
+          <span>$50K</span>
           <input
             type="range"
-            min="100000"
+            min="50000"
             max="1000000"
-            step="50000"
+            step="25000"
             value={threshold}
             onChange={(e) => setThreshold(Number(e.target.value))}
             className="flex-1 h-1 bg-gray-600 rounded appearance-none cursor-pointer"
@@ -115,18 +131,22 @@ export default function WhaleWatcher() {
           </li>
         ) : (
           trades.map((trade, i) => (
-            <li key={i} className={`flex justify-between items-center px-3 py-2 border-l-4 ${
-              trade.dir === 'B' ? 'border-green-500' : 'border-red-500'
-            }`}>
+            <li 
+              key={i} 
+              className={`flex justify-between items-center px-3 py-2 border-l-4 ${
+                trade.dir === 'B' ? 'border-green-300' : 'border-red-300'
+              }`}
+              style={{ backgroundColor: getBackgroundColor(trade) }}
+            >
               <div className="flex-1">
-                <div className="font-medium">{trade.symbol}</div>
-                <div className="text-xs text-gray-500">
+                <div className="font-medium text-white">{trade.symbol}</div>
+                <div className="text-xs text-gray-200">
                   {formatUsd(trade.notional)} @ ${trade.price.toLocaleString()}
                 </div>
               </div>
               <button
                 onClick={() => navigator.clipboard.writeText(trade.wallet)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs ml-2 flex-shrink-0"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs ml-2 flex-shrink-0"
                 title={`Copy wallet address`}
               >
                 Copy
