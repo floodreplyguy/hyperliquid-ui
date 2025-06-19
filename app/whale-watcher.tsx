@@ -17,15 +17,33 @@ export default function WhaleWatcher() {
   const [threshold, setThreshold] = useState(50000); // default $50 K
   const [assetFilter, setAssetFilter] = useState('ALL'); // ALL, BTC, ETH, …
 
-  // Enhanced oscillator sound logic
-  const playTradeSound = (notional: number, isBuy: boolean) => {
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+
+  // Initialize audio context on user interaction
+  const enableSound = async () => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+      setAudioContext(ctx);
+      setSoundEnabled(true);
+    } catch (error) {
+      console.log('Audio not supported:', error);
+    }
+  };
+
+  // Enhanced oscillator sound logic
+  const playTradeSound = (notional: number, isBuy: boolean) => {
+    if (!audioContext || !soundEnabled) return;
+    
+    try {
       const beep = (start: number, pitch: number) => {
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
+        const o = audioContext.createOscillator();
+        const g = audioContext.createGain();
         o.connect(g);
-        g.connect(ctx.destination);
+        g.connect(audioContext.destination);
         o.type = 'sine';
         o.frequency.value = pitch;
         g.gain.setValueAtTime(0, start);
@@ -37,13 +55,13 @@ export default function WhaleWatcher() {
 
       const beepCount = Math.min(Math.floor(notional / 50000), 5); // up to 5 beeps
       const pitch = isBuy ? 1000 : 400;
-      const startTime = ctx.currentTime;
+      const startTime = audioContext.currentTime;
 
       for (let i = 0; i < beepCount; i++) {
         beep(startTime + i * 0.12, pitch);
       }
-    } catch {
-      // silent
+    } catch (error) {
+      console.log('Sound playback failed:', error);
     }
   };
 
@@ -102,7 +120,18 @@ export default function WhaleWatcher() {
       <div className="bg-gray-700 text-white p-3 border-b rounded-t-lg">
         <div className="flex justify-between items-center text-sm font-semibold mb-2">
           <span>Whale Trades ({usd(threshold)}+)</span>
-          <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`} />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={enableSound}
+              className={`px-2 py-1 text-xs rounded ${
+                soundEnabled ? 'bg-green-600' : 'bg-gray-600 hover:bg-gray-500'
+              }`}
+              title={soundEnabled ? 'Sound enabled' : 'Click to enable sound'}
+            >
+              🔊
+            </button>
+            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`} />
+          </div>
         </div>
         <div className="flex items-center gap-2 text-xs mb-2">
           <span>$50K</span>
