@@ -22,6 +22,7 @@ export default function WhaleWatcher() {
 
     ws.onopen = () => {
       console.log('WebSocket connected, subscribing to fills...');
+      setConnected(true);
       ws.send(JSON.stringify({
         method: 'subscribe',
         subscription: {
@@ -70,10 +71,12 @@ export default function WhaleWatcher() {
 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
+      setConnected(false);
     };
 
     ws.onclose = (event) => {
       console.log('WebSocket closed:', event.code, event.reason);
+      setConnected(false);
     };
 
     return () => {
@@ -123,10 +126,10 @@ export default function WhaleWatcher() {
               </div>
               <button
                 onClick={() => navigator.clipboard.writeText(trade.wallet)}
-                className="text-blue-500 hover:underline text-xs ml-2 flex-shrink-0"
-                title={`Click to copy: ${trade.wallet}`}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs ml-2 flex-shrink-0"
+                title={`Copy wallet address`}
               >
-                {trade.wallet.length > 10 ? `${trade.wallet.substring(0, 6)}...${trade.wallet.substring(trade.wallet.length - 4)}` : trade.wallet}
+                Copy
               </button>
             </li>
           ))
