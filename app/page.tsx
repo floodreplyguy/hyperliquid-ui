@@ -153,8 +153,17 @@ export default function Page() {
                   maintainAspectRatio: false,
                   plugins: { legend: { display: false } },
                   scales: {
-                    x: { display: false },
-                    y: { ticks: { callback: (v) => usd(Number(v)) } },
+                    x: {
+                      ticks: {
+                        maxTicksLimit: 5,
+                        callback: (val) => `#${val}`,
+                      },
+                    },
+                    y: {
+                      ticks: {
+                        callback: (v) => usd(Number(v))
+                      },
+                    },
                   },
                 }}
               />
