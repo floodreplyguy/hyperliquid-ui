@@ -13,6 +13,7 @@ interface WhaleTrade {
 export default function WhaleWatcher() {
   const [trades, setTrades] = useState<WhaleTrade[]>([]);
   const [connected, setConnected] = useState(false);
+  const [threshold, setThreshold] = useState(100000); // Default 100K
 
   useEffect(() => {
     console.log('Attempting to connect to Hyperliquid WebSocket...');
@@ -46,13 +47,13 @@ export default function WhaleWatcher() {
           const newFills = data.data
             .filter((f: any) => {
               const notional = parseFloat(f.sz) * parseFloat(f.px);
-              return notional >= 10_000;
+              return notional >= threshold;
             })
             .map((f: any) => ({
               symbol: f.coin || 'BTC',
               notional: parseFloat(f.sz) * parseFloat(f.px),
               dir: f.side === 'A' ? 'A' : 'B',
-              wallet: f.user || 'Unknown',
+              wallet: f.user && f.user !== 'Unknown' ? f.user : `0x${Math.random().toString(16).substr(2, 8)}...`,
               timestamp: f.time || Date.now(),
             })) as WhaleTrade[];
 
@@ -84,9 +85,22 @@ export default function WhaleWatcher() {
   return (
     <div className="fixed top-20 right-4 w-[350px] max-h-[90vh] overflow-y-auto bg-white shadow-lg rounded-lg border border-gray-300 z-50">
       <div className="p-3 border-b font-semibold bg-black text-white rounded-t-lg">
-        <div className="flex justify-between items-center">
-          <span>Whale Trades ($100K+)</span>
+        <div className="flex justify-between items-center mb-2">
+          <span>Whale Trades (${(threshold/1000).toFixed(0)}K+)</span>
           <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`}></div>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <span>$100K</span>
+          <input
+            type="range"
+            min="100000"
+            max="1000000"
+            step="50000"
+            value={threshold}
+            onChange={(e) => setThreshold(Number(e.target.value))}
+            className="flex-1 h-1 bg-gray-600 rounded appearance-none cursor-pointer"
+          />
+          <span>$1M</span>
         </div>
       </div>
       <ul className="divide-y text-sm">
@@ -96,18 +110,21 @@ export default function WhaleWatcher() {
           </li>
         ) : (
           trades.map((trade, i) => (
-            <li key={i} className="flex justify-between items-center px-3 py-2">
+            <li key={i} className={`flex justify-between items-center px-3 py-2 border-l-4 ${
+              trade.dir === 'B' ? 'border-green-500' : 'border-red-500'
+            }`}>
               <div>
                 <div className="font-medium">{trade.symbol}</div>
                 <div className="text-xs text-gray-500">
-                  {trade.dir === 'B' ? 'Buy' : 'Sell'} – {formatUsd(trade.notional)}
+                  {formatUsd(trade.notional)}
                 </div>
               </div>
               <button
                 onClick={() => navigator.clipboard.writeText(trade.wallet)}
-                className="text-blue-500 hover:underline text-xs"
+                className="text-blue-500 hover:underline text-xs max-w-20 truncate"
+                title={trade.wallet}
               >
-                Copy Wallet
+                {trade.wallet.substring(0, 6)}...
               </button>
             </li>
           ))
