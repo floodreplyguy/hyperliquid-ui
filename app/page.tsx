@@ -9,16 +9,14 @@ import {
   LineElement,
   PointElement,
   Tooltip,
-  Legend,
-  TimeScale
+  Legend
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import 'chartjs-adapter-date-fns';
 
 // 🐳 Whale watcher runs only in the browser (WebSocket, clipboard)
 const WhaleWatcher = dynamic(() => import('./whale-watcher'), { ssr: false });
 
-ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Legend, TimeScale);
+ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Legend);
 
 /* ───────── Types ───────── */
 interface TradeStats {
@@ -131,7 +129,7 @@ export default function Page() {
               <Line
                 height={300}
                 data={{
-                  labels: stats.pnlChart.map((p) => new Date(p.timestamp)),
+                  labels: stats.pnlChart.map((_, i) => i),
                   datasets: [
                     {
                       label: 'PnL (USD)',
@@ -149,21 +147,7 @@ export default function Page() {
                   maintainAspectRatio: false,
                   plugins: { legend: { display: false } },
                   scales: {
-                    x: {
-                      type: 'time',
-                      time: {
-                        unit: 'minute',
-                        tooltipFormat: 'MMM d, h:mm a',
-                        displayFormats: {
-                          minute: 'h:mm a',
-                          hour: 'MMM d h a',
-                        },
-                      },
-                      ticks: {
-                        maxTicksLimit: 6,
-                        autoSkip: true,
-                      },
-                    },
+                    x: { ticks: { display: false }, grid: { display: false } },
                     y: {
                       ticks: {
                         callback: (v) => usd(Number(v))
@@ -238,3 +222,4 @@ function SideCard({ side, data }: { side: 'Longs' | 'Shorts'; data: TradeStats }
     </div>
   );
 }
+
