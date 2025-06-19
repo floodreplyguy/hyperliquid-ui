@@ -2,17 +2,26 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 
-// 👉 Dynamically import the WhaleWatcher so it only runs in the browser
-//    (it opens a WebSocket and uses navigator.clipboard)
+// 🐳 Whale watcher runs only in the browser (WebSocket, clipboard)
 const WhaleWatcher = dynamic(() => import('./whale-watcher'), { ssr: false });
 
-/* ────────────────────────────────────────────────────────────────────────── *
-   DATA MODELS
- * ────────────────────────────────────────────────────────────────────────── */
+ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Legend);
+
+/* ───────── Types ───────── */
 interface TradeStats {
   trades: number;
-  winRate: number; // 0‑1
+  winRate: number;
   avgWin: number;
   avgLoss: number;
   totalPnl: number;
@@ -39,24 +48,14 @@ interface ApiResponse {
   pnlChart: { trade: number; pnl: number }[];
 }
 
-/* ────────────────────────────────────────────────────────────────────────── *
-   UTILITIES
- * ────────────────────────────────────────────────────────────────────────── */
+/* ───────── Helpers ───────── */
 const usd = (n: number) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-  }).format(n);
-
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 
-/* ────────────────────────────────────────────────────────────────────────── *
-   COMPONENT
- * ────────────────────────────────────────────────────────────────────────── */
+/* ───────── Main Component ───────── */
 export default function Page() {
   const [wallet, setWallet] = useState('');
-  const [type, setType] = useState<'perp' | 'spot'>('perp');
   const [stats, setStats] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -66,14 +65,12 @@ export default function Page() {
       setError('Please enter a wallet address');
       return;
     }
-
     try {
       setLoading(true);
       setError('');
       setStats(null);
-
-      // 👇 Replace the hard‑coded URL with your own backend if moved
-      const url = `https://pnl-dna-evansmargintrad.replit.app/stats?wallet=${wallet}&type=${type}`;
+      // 🚨 Perps‑only endpoint
+      const url = `https://pnl-dna-evansmargintrad.replit.app/stats?wallet=${wallet}&type=perp`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Backend error: ${res.status}`);
       const json = (await res.json()) as ApiResponse | { error: string };
@@ -88,10 +85,10 @@ export default function Page() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-10 space-y-10 relative">
-      {/* ── Whale watcher lives in the corner ───────────────────────────── */}
+      {/* Whale watcher overlay */}
       <WhaleWatcher />
 
-      {/* ── Controls ───────────────────────────────────────────────────── */}
+      {/* Controls */}
       <section className="flex flex-col md:flex-row gap-4 items-end">
         <input
           value={wallet}
@@ -99,14 +96,6 @@ export default function Page() {
           placeholder="Wallet (0x…)"
           className="border rounded px-4 py-2 flex-1"
         />
-        <select
-          className="border rounded px-3 py-2"
-          value={type}
-          onChange={(e) => setType(e.target.value as 'perp' | 'spot')}
-        >
-          <option value="perp">Perp</option>
-          <option value="spot">Spot</option>
-        </select>
         <button
           onClick={fetchStats}
           disabled={loading}
@@ -116,13 +105,8 @@ export default function Page() {
         </button>
       </section>
 
-      {error && (
-        <p className="text-red-600 font-medium">
-          Error: {error}
-        </p>
-      )}
+      {error && <p className="text-red-600 font-medium">Error: {error}</p>}
 
-      {/* ── Stats ──────────────────────────────────────────────────────── */}
       {stats && (
         <div className="space-y-10">
           {/* Overview */}
@@ -144,6 +128,39 @@ export default function Page() {
             <SideCard side="Shorts" data={stats.shorts} />
           </div>
 
+          {/* Cumulative PnL chart */}
+          <section>
+            <h2 className="text-xl font-bold mb-3">Cumulative PnL (last 2 000 trades)</h2>
+            <div className="bg-white border rounded p-4">
+              <Line
+                height={300}
+                data={{
+                  labels: stats.pnlChart.map((p) => p.trade),
+                  datasets: [
+                    {
+                      label: 'PnL (USD)',
+                      data: stats.pnlChart.map((p) => p.pnl),
+                      borderColor: stats.realizedPnl >= 0 ? '#16a34a' : '#dc2626',
+                      backgroundColor: stats.realizedPnl >= 0 ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)',
+                      fill: true,
+                      pointRadius: 0,
+                      tension: 0.3,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    x: { display: false },
+                    y: { ticks: { callback: (v) => usd(Number(v)) } },
+                  },
+                }}
+              />
+            </div>
+          </section>
+
           {/* Biggest orders */}
           <section>
             <h2 className="font-bold text-lg mb-3">Biggest Orders (Notional)</h2>
@@ -158,12 +175,10 @@ export default function Page() {
 
           <section className="text-sm space-y-1">
             <p>
-              <strong>Biggest Winner:</strong> {stats.biggestWinner.symbol} —{' '}
-              {usd(stats.biggestWinner.pnl)}
+              <strong>Biggest Winner:</strong> {stats.biggestWinner.symbol} — {usd(stats.biggestWinner.pnl)}
             </p>
             <p>
-              <strong>Biggest Loser:</strong> {stats.biggestLoser.symbol} —{' '}
-              {usd(stats.biggestLoser.pnl)}
+              <strong>Biggest Loser:</strong> {stats.biggestLoser.symbol} — {usd(stats.biggestLoser.pnl)}
             </p>
           </section>
         </div>
@@ -172,16 +187,12 @@ export default function Page() {
   );
 }
 
-/* ────────────────────────────────────────────────────────────────────────── *
-   SMALL PRESENTATIONAL COMPONENTS
- * ────────────────────────────────────────────────────────────────────────── */
+/* ───────── Tiny helpers ───────── */
 function StatsGrid({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
       <h2 className="text-xl font-bold mb-3">{title}</h2>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-        {children}
-      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">{children}</div>
     </section>
   );
 }
@@ -198,9 +209,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 function SideCard({ side, data }: { side: 'Longs' | 'Shorts'; data: TradeStats }) {
   return (
     <div className="border rounded-lg p-4 bg-white shadow-sm space-y-2 text-sm">
-      <h3 className={`font-bold text-lg mb-2 ${side === 'Longs' ? 'text-green-600' : 'text-red-600'}`}>
-        {side}
-      </h3>
+      <h3 className={`font-bold text-lg mb-2 ${side === 'Longs' ? 'text-green-600' : 'text-red-600'}`}>{side}</h3>
       <Stat label="Trades" value={data.trades} />
       <Stat label="Win Rate" value={pct(data.winRate)} />
       <Stat label="Avg Win" value={usd(data.avgWin)} />
