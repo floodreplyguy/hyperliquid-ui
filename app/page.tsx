@@ -10,13 +10,15 @@ import {
   PointElement,
   Tooltip,
   Legend,
+  TimeScale
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import 'chartjs-adapter-date-fns';
 
 // 🐳 Whale watcher runs only in the browser (WebSocket, clipboard)
 const WhaleWatcher = dynamic(() => import('./whale-watcher'), { ssr: false });
 
-ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Legend, TimeScale);
 
 /* ───────── Types ───────── */
 interface TradeStats {
@@ -45,7 +47,7 @@ interface ApiResponse {
   biggestOrders: { symbol: string; notional: number }[];
   biggestWinner: { symbol: string; pnl: number };
   biggestLoser: { symbol: string; pnl: number };
-  pnlChart: { trade: number; pnl: number }[];
+  pnlChart: { timestamp: number; pnl: number }[];
 }
 
 /* ───────── Helpers ───────── */
@@ -69,7 +71,6 @@ export default function Page() {
       setLoading(true);
       setError('');
       setStats(null);
-      // 🚨 Perps‑only endpoint
       const url = `https://pnl-dna-evansmargintrad.replit.app/stats?wallet=${wallet}&type=perp`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Backend error: ${res.status}`);
@@ -85,10 +86,8 @@ export default function Page() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-10 space-y-10 relative">
-      {/* Whale watcher overlay */}
       <WhaleWatcher />
 
-      {/* Controls */}
       <section className="flex flex-col md:flex-row gap-4 items-end">
         <input
           value={wallet}
@@ -109,7 +108,6 @@ export default function Page() {
 
       {stats && (
         <div className="space-y-10">
-          {/* Overview */}
           <StatsGrid title="Overview">
             <Stat label="Total Trades" value={stats.totalTrades} />
             <Stat label="Win Rate" value={pct(stats.winRate)} />
@@ -122,20 +120,18 @@ export default function Page() {
             <Stat label="Most Traded" value={stats.mostTraded} />
           </StatsGrid>
 
-          {/* Long & Short */}
           <div className="grid md:grid-cols-2 gap-8">
             <SideCard side="Longs" data={stats.longs} />
             <SideCard side="Shorts" data={stats.shorts} />
           </div>
 
-          {/* Cumulative PnL chart */}
           <section>
             <h2 className="text-xl font-bold mb-3">Cumulative PnL (last 2 000 trades)</h2>
             <div className="bg-white border rounded p-4">
               <Line
                 height={300}
                 data={{
-                  labels: stats.pnlChart.map((p) => p.trade),
+                  labels: stats.pnlChart.map((p) => new Date(p.timestamp)),
                   datasets: [
                     {
                       label: 'PnL (USD)',
@@ -154,9 +150,18 @@ export default function Page() {
                   plugins: { legend: { display: false } },
                   scales: {
                     x: {
+                      type: 'time',
+                      time: {
+                        unit: 'minute',
+                        tooltipFormat: 'MMM d, h:mm a',
+                        displayFormats: {
+                          minute: 'h:mm a',
+                          hour: 'MMM d h a',
+                        },
+                      },
                       ticks: {
-                        maxTicksLimit: 5,
-                        callback: (val) => `#${val}`,
+                        maxTicksLimit: 6,
+                        autoSkip: true,
                       },
                     },
                     y: {
@@ -170,7 +175,6 @@ export default function Page() {
             </div>
           </section>
 
-          {/* Biggest orders */}
           <section>
             <h2 className="font-bold text-lg mb-3">Biggest Orders (Notional)</h2>
             <ul className="list-disc list-inside text-sm space-y-1">
@@ -196,7 +200,6 @@ export default function Page() {
   );
 }
 
-/* ───────── Tiny helpers ───────── */
 function StatsGrid({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
