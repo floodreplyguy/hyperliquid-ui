@@ -46,6 +46,9 @@ interface ApiResponse {
   biggestWinner: { symbol: string; pnl: number };
   biggestLoser: { symbol: string; pnl: number };
   pnlChart: { timestamp: number; pnl: number }[];
+  positionTendency: string;
+  recentLongs: number;
+  recentShorts: number;
 }
 
 /* ───────── Helpers ───────── */
@@ -108,14 +111,26 @@ export default function Page() {
         <div className="space-y-10">
           <StatsGrid title="Overview">
             <Stat label="Total Trades" value={stats.totalTrades} />
-            <Stat label="Win Rate" value={pct(stats.winRate)} />
-            <Stat label="Avg Win" value={usd(stats.avgWin)} />
-            <Stat label="Avg Loss" value={usd(stats.avgLoss)} />
-            <Stat label="Realized PnL" value={usd(stats.realizedPnl)} />
+            <Stat label="Win Rate" value={pct(stats.winRate)} />
+            <Stat label="Avg Win" value={usd(stats.avgWin)} />
+            <Stat label="Avg Loss" value={usd(stats.avgLoss)} />
+            <Stat label="Realized PnL" value={usd(stats.realizedPnl)} />
             <Stat label="Volume" value={usd(stats.volume)} />
             <Stat label="Fees" value={usd(stats.fees)} />
-            <Stat label="Avg Notional" value={usd(stats.avgNotional)} />
-            <Stat label="Most Traded" value={stats.mostTraded} />
+            <Stat label="Avg Notional" value={usd(stats.avgNotional)} />
+            <Stat label="Most Traded" value={stats.mostTraded} />
+            <div className="border rounded p-3 bg-white">
+              <p className="text-xs text-gray-500 mb-1">Position Tendency (Last 100)</p>
+              <p className={`text-base font-medium ${
+                stats.positionTendency === 'Long Bias' ? 'text-green-600' : 
+                stats.positionTendency === 'Short Bias' ? 'text-red-600' : 'text-gray-600'
+              }`}>
+                {stats.positionTendency}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {stats.recentLongs}L / {stats.recentShorts}S
+              </p>
+            </div>
           </StatsGrid>
 
           <div className="grid md:grid-cols-2 gap-8">
@@ -211,8 +226,8 @@ function SideCard({ side, data }: { side: 'Longs' | 'Shorts'; data: TradeStats }
       <Stat label="Avg Win" value={usd(data.avgWin)} />
       <Stat label="Avg Loss" value={usd(data.avgLoss)} />
       <Stat label="Total PnL" value={usd(data.totalPnl)} />
-      <Stat label="Volume" value={usd(data.volume)} />
-      <Stat label="Fees" value={usd(data.fees)} />
+      <Stat label="Volume" value={data.volume} />
+      <Stat label="Fees" value={data.fees} />
       <Stat
         label="Top 3 Symbols"
         value={Object.entries(data.top3)
@@ -222,4 +237,3 @@ function SideCard({ side, data }: { side: 'Longs' | 'Shorts'; data: TradeStats }
     </div>
   );
 }
-
