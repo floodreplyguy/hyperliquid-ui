@@ -292,8 +292,8 @@ export default function Page() {
                     {
                       label: 'PnL (USD)',
                       data: stats.pnlChart.map((p) => p.pnl),
-                      borderColor: stats.totalPnl >= 0 ? '#16a34a' : '#dc2626',
-                      backgroundColor: stats.totalPnl >= 0 ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)',
+                      borderColor: stats.realizedPnl >= 0 ? '#16a34a' : '#dc2626',
+                      backgroundColor: stats.realizedPnl >= 0 ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)',
                       fill: true,
                       pointRadius: 0,
                       tension: 0.3,
