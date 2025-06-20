@@ -63,6 +63,7 @@ interface ApiResponse {
     sessions: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
     hours: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
   };
+  openPositions: { symbol: string; side: string; size: number; entryPrice: number; unrealizedPnl: number }[];
 }
 
 /* ───────── Helpers ───────── */
@@ -155,7 +156,7 @@ export default function Page() {
           <section>
             <h2 className="text-xl font-bold mb-3">Time-Based Performance Analysis</h2>
             <div className="grid md:grid-cols-3 gap-6">
-              
+
               {/* Days of Week */}
               <div className="bg-white border rounded-lg p-4">
                 <h3 className="font-semibold mb-3 text-green-600">📅 Days of Week</h3>
@@ -244,8 +245,44 @@ export default function Page() {
             </div>
           </section>
 
+          {stats.openPositions && stats.openPositions.length > 0 && (
+            <section>
+              <h2 className="text-xl font-bold mb-3">Open Positions</h2>
+              <div className="bg-white border rounded p-4">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-2">Symbol</th>
+                        <th className="text-left p-2">Side</th>
+                        <th className="text-right p-2">Size</th>
+                        <th className="text-right p-2">Entry Price</th>
+                        <th className="text-right p-2">Unrealized PnL</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.openPositions.map((pos, i) => (
+                        <tr key={i} className="border-b">
+                          <td className="p-2 font-medium">{pos.symbol}</td>
+                          <td className={`p-2 font-medium ${pos.side === 'long' ? 'text-green-600' : 'text-red-600'}`}>
+                            {pos.side.toUpperCase()}
+                          </td>
+                          <td className="p-2 text-right">{Math.abs(pos.size).toFixed(4)}</td>
+                          <td className="p-2 text-right">{usd(pos.entryPrice)}</td>
+                          <td className={`p-2 text-right font-medium ${pos.unrealizedPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {usd(pos.unrealizedPnl)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          )}
+
           <section>
-            <h2 className="text-xl font-bold mb-3">Cumulative PnL (last 2 000 trades)</h2>
+            <h2 className="text-xl font-bold mb-3">Cumulative PnL (last 2 000 trades)</h2>
             <div className="bg-white border rounded p-4">
               <Line
                 height={300}
@@ -255,8 +292,8 @@ export default function Page() {
                     {
                       label: 'PnL (USD)',
                       data: stats.pnlChart.map((p) => p.pnl),
-                      borderColor: stats.realizedPnl >= 0 ? '#16a34a' : '#dc2626',
-                      backgroundColor: stats.realizedPnl >= 0 ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)',
+                      borderColor: stats.totalPnl >= 0 ? '#16a34a' : '#dc2626',
+                      backgroundColor: stats.totalPnl >= 0 ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)',
                       fill: true,
                       pointRadius: 0,
                       tension: 0.3,
