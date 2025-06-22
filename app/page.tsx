@@ -144,7 +144,7 @@ export default function Page() {
                 (stats.confidenceScore || 0) >= 70 ? 'text-green-600' : 
                 (stats.confidenceScore || 0) >= 50 ? 'text-yellow-600' : 'text-red-600'
               }`}>
-                {console.log('Rendering confidence score:', stats.confidenceScore) || (stats.confidenceScore || 0)}%
+                {(stats.confidenceScore || 0)}%
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 {(stats.confidenceScore || 0) >= 70 ? 'High confidence' :
