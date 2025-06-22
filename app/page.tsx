@@ -342,7 +342,7 @@ export default function Page() {
               </div>
 
             </div>
-          </section></style>
+          </section>
 
           <style jsx>{`
             .custom-scrollbar::-webkit-scrollbar {
