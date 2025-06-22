@@ -17,8 +17,6 @@ export default function WhaleWatcher() {
   const [connected, setConnected] = useState(false);
   const [threshold, setThreshold] = useState(50000);
   const [assetFilter, setAssetFilter] = useState('ALL');
-  const [currentTime, setCurrentTime] = useState(Date.now());
-
   useEffect(() => {
     const ws = new WebSocket('wss://api.hyperliquid.xyz/ws');
 
@@ -72,18 +70,10 @@ export default function WhaleWatcher() {
     return () => ws.close();
   }, [threshold]);
 
-  // Update current time every second to refresh relative timestamps
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   const usd = (n: number) => `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
   
   const getTimeAgo = (receivedAt: number) => {
-    const seconds = Math.floor((currentTime - receivedAt) / 1000);
+    const seconds = Math.floor((Date.now() - receivedAt) / 1000);
     if (seconds < 60) return `${seconds}s ago`;
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes}m ago`;
