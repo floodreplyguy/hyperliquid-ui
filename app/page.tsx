@@ -92,8 +92,11 @@ export default function Page() {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Backend error: ${res.status}`);
       const json = (await res.json()) as ApiResponse | { error: string };
+      console.log('Raw API response:', json);
       if ((json as any).error) throw new Error((json as any).error);
-      setStats(json as ApiResponse);
+      const statsData = json as ApiResponse;
+      console.log('Confidence score received:', statsData.confidenceScore);
+      setStats(statsData);
     } catch (err: any) {
       setError(err.message ?? 'Failed to fetch');
     } finally {
@@ -141,7 +144,7 @@ export default function Page() {
                 (stats.confidenceScore || 0) >= 70 ? 'text-green-600' : 
                 (stats.confidenceScore || 0) >= 50 ? 'text-yellow-600' : 'text-red-600'
               }`}>
-                {stats.confidenceScore || 0}%
+                {console.log('Rendering confidence score:', stats.confidenceScore) || (stats.confidenceScore || 0)}%
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 {(stats.confidenceScore || 0) >= 70 ? 'High confidence' :
