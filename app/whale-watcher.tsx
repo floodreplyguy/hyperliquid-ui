@@ -45,7 +45,19 @@ export default function WhaleWatcher() {
           })) as WhaleTrade[];
 
         if (fresh.length > 0) {
-          setTrades(prev => [...fresh, ...prev].slice(0, 50));
+          setTrades(prev => {
+            const newTrades = [...fresh, ...prev].slice(0, 50);
+            // Trigger slide-down animation for existing trades
+            setTimeout(() => {
+              const tradeElements = document.querySelectorAll('.trade-item');
+              tradeElements.forEach((el, index) => {
+                if (index >= fresh.length) {
+                  el.classList.add('slide-down');
+                }
+              });
+            }, 50);
+            return newTrades;
+          });
         }
       } catch (err) {
         console.error('WS parse error', err);
@@ -65,14 +77,21 @@ export default function WhaleWatcher() {
       <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-black to-gray-900">
         {/* Floating Particles */}
         <div className="absolute inset-0 overflow-hidden">
-          {[...Array(20)].map((_, i) => (
+          {[...Array(30)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-1 h-1 bg-blue-400 rounded-full particle"
+              className={`absolute rounded-full particle ${
+                Math.random() > 0.7 ? 'w-2 h-2' : 'w-1 h-1'
+              }`}
               style={{
+                background: `radial-gradient(circle, ${
+                  ['rgba(59, 130, 246, 0.8)', 'rgba(147, 51, 234, 0.8)', 'rgba(16, 185, 129, 0.8)', 'rgba(245, 101, 101, 0.8)'][Math.floor(Math.random() * 4)]
+                }, transparent)`,
                 left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 10}s`,
-                animationDuration: `${8 + Math.random() * 4}s`
+                animationDelay: `${Math.random() * 15}s`,
+                animationDuration: `${10 + Math.random() * 8}s`,
+                filter: 'blur(0.5px)',
+                boxShadow: '0 0 10px currentColor'
               }}
             />
           ))}
@@ -84,120 +103,285 @@ export default function WhaleWatcher() {
 
       <style jsx>{`
         @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 25px rgba(59, 130, 246, 0.4), inset 0 0 15px rgba(59, 130, 246, 0.1); }
-          50% { box-shadow: 0 0 35px rgba(59, 130, 246, 0.7), inset 0 0 25px rgba(59, 130, 246, 0.2); }
+          0%, 100% { 
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.4), inset 0 0 15px rgba(59, 130, 246, 0.1);
+            transform: scale(1);
+          }
+          50% { 
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.8), inset 0 0 25px rgba(59, 130, 246, 0.3);
+            transform: scale(1.02);
+          }
         }
         
         @keyframes slide-in {
-          0% { transform: translateX(100%) rotateY(90deg); opacity: 0; }
-          100% { transform: translateX(0) rotateY(0deg); opacity: 1; }
+          0% { 
+            transform: translateX(100%) rotateY(90deg) scale(0.8); 
+            opacity: 0; 
+            filter: blur(10px);
+          }
+          50% {
+            transform: translateX(20%) rotateY(45deg) scale(0.95);
+            opacity: 0.7;
+            filter: blur(2px);
+          }
+          100% { 
+            transform: translateX(0) rotateY(0deg) scale(1); 
+            opacity: 1; 
+            filter: blur(0px);
+          }
+        }
+        
+        @keyframes slide-down {
+          0% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(2px) scale(0.98); }
+          100% { transform: translateY(0) scale(1); }
         }
         
         @keyframes glow-buy {
           0%, 100% { 
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3), inset 0 0 10px rgba(34, 197, 94, 0.1);
-            border-color: rgba(34, 197, 94, 0.5);
+            box-shadow: 0 0 25px rgba(34, 197, 94, 0.4), inset 0 0 15px rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.6);
+            transform: scale(1);
           }
-          50% { 
-            box-shadow: 0 0 35px rgba(34, 197, 94, 0.6), inset 0 0 20px rgba(34, 197, 94, 0.2);
-            border-color: rgba(34, 197, 94, 0.8);
+          25% { 
+            box-shadow: 0 0 45px rgba(34, 197, 94, 0.7), inset 0 0 25px rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.9);
+            transform: scale(1.03);
+          }
+          75% { 
+            box-shadow: 0 0 35px rgba(34, 197, 94, 0.6), inset 0 0 20px rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.7);
+            transform: scale(1.01);
           }
         }
         
         @keyframes glow-sell {
           0%, 100% { 
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3), inset 0 0 10px rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.4), inset 0 0 15px rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.6);
+            transform: scale(1);
           }
-          50% { 
-            box-shadow: 0 0 35px rgba(239, 68, 68, 0.6), inset 0 0 20px rgba(239, 68, 68, 0.2);
-            border-color: rgba(239, 68, 68, 0.8);
+          25% { 
+            box-shadow: 0 0 45px rgba(239, 68, 68, 0.7), inset 0 0 25px rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.9);
+            transform: scale(1.03);
+          }
+          75% { 
+            box-shadow: 0 0 35px rgba(239, 68, 68, 0.6), inset 0 0 20px rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.7);
+            transform: scale(1.01);
           }
         }
         
         @keyframes float {
-          0%, 100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-15px) scale(1.05); }
+          0%, 100% { transform: translateY(0px) scale(1) rotate(0deg); }
+          33% { transform: translateY(-10px) scale(1.03) rotate(2deg); }
+          66% { transform: translateY(-15px) scale(1.05) rotate(-1deg); }
         }
         
         @keyframes particle-float {
-          0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { transform: translateY(-10px) rotate(360deg); opacity: 0; }
+          0% { 
+            transform: translateY(100vh) rotate(0deg) scale(0); 
+            opacity: 0; 
+            filter: blur(5px);
+          }
+          10% { 
+            opacity: 1; 
+            transform: translateY(90vh) rotate(45deg) scale(1);
+            filter: blur(0px);
+          }
+          50% {
+            transform: translateY(50vh) rotate(180deg) scale(1.2);
+            filter: blur(1px);
+          }
+          90% { 
+            opacity: 1; 
+            transform: translateY(10vh) rotate(315deg) scale(0.8);
+            filter: blur(2px);
+          }
+          100% { 
+            transform: translateY(-10px) rotate(360deg) scale(0); 
+            opacity: 0; 
+            filter: blur(5px);
+          }
         }
         
         @keyframes wave {
-          0%, 100% { transform: translateX(-100%) skewX(0deg); }
-          50% { transform: translateX(100%) skewX(5deg); }
+          0%, 100% { 
+            transform: translateX(-100%) skewX(0deg) scaleY(1); 
+            opacity: 0.1;
+          }
+          25% {
+            transform: translateX(-50%) skewX(2deg) scaleY(1.1);
+            opacity: 0.3;
+          }
+          50% { 
+            transform: translateX(0%) skewX(5deg) scaleY(1.2); 
+            opacity: 0.2;
+          }
+          75% {
+            transform: translateX(50%) skewX(2deg) scaleY(1.1);
+            opacity: 0.3;
+          }
         }
         
         @keyframes gradient-shift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
+          0%, 100% { 
+            background-position: 0% 50%; 
+            filter: hue-rotate(0deg);
+          }
+          33% {
+            background-position: 50% 25%;
+            filter: hue-rotate(60deg);
+          }
+          66% {
+            background-position: 100% 75%;
+            filter: hue-rotate(120deg);
+          }
         }
         
         @keyframes whale-pulse {
-          0%, 100% { transform: scale(1) rotate(0deg); text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-          50% { transform: scale(1.1) rotate(5deg); text-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+          0%, 100% { 
+            transform: scale(1) rotate(0deg); 
+            text-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+            filter: hue-rotate(0deg);
+          }
+          25% {
+            transform: scale(1.15) rotate(3deg);
+            text-shadow: 0 0 25px rgba(147, 51, 234, 0.8);
+            filter: hue-rotate(60deg);
+          }
+          50% { 
+            transform: scale(1.2) rotate(5deg); 
+            text-shadow: 0 0 30px rgba(59, 130, 246, 0.9);
+            filter: hue-rotate(120deg);
+          }
+          75% {
+            transform: scale(1.1) rotate(2deg);
+            text-shadow: 0 0 20px rgba(16, 185, 129, 0.7);
+            filter: hue-rotate(180deg);
+          }
         }
         
         @keyframes data-stream {
-          0% { opacity: 0; transform: translateY(20px); }
-          100% { opacity: 1; transform: translateY(0); }
+          0% { 
+            opacity: 0; 
+            transform: translateY(30px) scale(0.8); 
+            filter: blur(5px);
+          }
+          50% {
+            opacity: 0.8;
+            transform: translateY(10px) scale(1.05);
+            filter: blur(1px);
+          }
+          100% { 
+            opacity: 1; 
+            transform: translateY(0) scale(1); 
+            filter: blur(0px);
+          }
+        }
+        
+        @keyframes organic-breathe {
+          0%, 100% { 
+            transform: scale(1) rotate(0deg);
+            filter: brightness(1) saturate(1);
+          }
+          50% { 
+            transform: scale(1.02) rotate(1deg);
+            filter: brightness(1.1) saturate(1.2);
+          }
+        }
+        
+        @keyframes fluid-morph {
+          0%, 100% {
+            border-radius: 12px;
+            transform: skewX(0deg);
+          }
+          25% {
+            border-radius: 20px 8px 15px 10px;
+            transform: skewX(1deg);
+          }
+          50% {
+            border-radius: 8px 20px 10px 15px;
+            transform: skewX(-1deg);
+          }
+          75% {
+            border-radius: 15px 10px 20px 8px;
+            transform: skewX(0.5deg);
+          }
         }
         
         .whale-glow {
-          animation: pulse-glow 2s ease-in-out infinite;
-          background: linear-gradient(-45deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));
+          animation: pulse-glow 3s ease-in-out infinite, gradient-shift 6s ease infinite, organic-breathe 4s ease-in-out infinite;
+          background: linear-gradient(-45deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8), rgba(55, 48, 163, 0.3));
           background-size: 400% 400%;
-          animation: pulse-glow 2s ease-in-out infinite, gradient-shift 4s ease infinite;
+          transition: all 0.3s ease;
         }
         
-        .trade-enter {
-          animation: slide-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), data-stream 0.8s ease-out;
+        .trade-item {
+          animation: slide-in 0.8s cubic-bezier(0.23, 1, 0.32, 1), data-stream 1s ease-out, fluid-morph 8s ease-in-out infinite;
           transform-style: preserve-3d;
+          transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+          will-change: transform, opacity;
+        }
+        
+        .trade-item.slide-down {
+          animation: slide-down 0.4s cubic-bezier(0.23, 1, 0.32, 1);
         }
         
         .buy-glow {
-          animation: glow-buy 2.5s ease-in-out infinite;
+          animation: glow-buy 3s ease-in-out infinite, organic-breathe 5s ease-in-out infinite;
           border: 1px solid transparent;
+          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
         }
         
         .sell-glow {
-          animation: glow-sell 2.5s ease-in-out infinite;
+          animation: glow-sell 3s ease-in-out infinite, organic-breathe 5s ease-in-out infinite;
           border: 1px solid transparent;
+          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
         }
         
         .whale-float {
-          animation: float 3s ease-in-out infinite, whale-pulse 4s ease-in-out infinite;
+          animation: float 4s ease-in-out infinite, whale-pulse 5s ease-in-out infinite, organic-breathe 3s ease-in-out infinite;
         }
         
         .particle {
           animation: particle-float linear infinite;
+          will-change: transform, opacity;
         }
         
         .wave-bg {
-          background: linear-gradient(45deg, transparent, rgba(59, 130, 246, 0.1), transparent);
-          animation: wave 6s ease-in-out infinite;
+          background: linear-gradient(45deg, transparent, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.1), transparent);
+          animation: wave 8s ease-in-out infinite;
+          filter: blur(1px);
         }
         
         .symbol-glow {
-          text-shadow: 0 0 10px currentColor;
-          animation: data-stream 0.5s ease-out;
+          text-shadow: 0 0 15px currentColor, 0 0 30px currentColor;
+          animation: data-stream 0.7s ease-out;
+          transition: all 0.3s ease;
         }
         
         .whale-badge {
-          animation: whale-pulse 1.5s ease-in-out infinite;
+          animation: whale-pulse 2s ease-in-out infinite, organic-breathe 3s ease-in-out infinite;
+          filter: drop-shadow(0 0 10px currentColor);
         }
         
         .copy-btn {
-          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+          animation: organic-breathe 6s ease-in-out infinite;
         }
         
         .copy-btn:hover {
-          transform: scale(1.1) rotate(5deg);
-          box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+          transform: scale(1.15) rotate(8deg);
+          box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6);
+          filter: brightness(1.2) saturate(1.3);
+        }
+        
+        .trade-item:hover {
+          transform: scale(1.05) translateY(-2px);
+          z-index: 10;
+          filter: brightness(1.1) saturate(1.2);
         }
       `}</style>
 
@@ -268,16 +452,27 @@ export default function WhaleWatcher() {
               return (
                 <div
                   key={`${t.timestamp}-${i}`}
-                  className={`trade-enter flex items-center p-3 rounded-lg transition-all duration-500 hover:scale-[1.03] transform relative overflow-hidden ${
+                  className={`trade-item flex items-center p-3 rounded-lg relative overflow-hidden ${
                     isBuy 
-                      ? `bg-gradient-to-r from-green-900/30 to-green-800/20 border-l-4 border-green-500 hover:from-green-800/40 hover:to-green-700/30 ${isLarge ? 'buy-glow' : ''}` 
-                      : `bg-gradient-to-r from-red-900/30 to-red-800/20 border-l-4 border-red-500 hover:from-red-800/40 hover:to-red-700/30 ${isLarge ? 'sell-glow' : ''}`
+                      ? `bg-gradient-to-r from-green-900/40 to-green-800/25 border-l-4 border-green-500 hover:from-green-800/50 hover:to-green-700/35 ${isLarge ? 'buy-glow' : ''}` 
+                      : `bg-gradient-to-r from-red-900/40 to-red-800/25 border-l-4 border-red-500 hover:from-red-800/50 hover:to-red-700/35 ${isLarge ? 'sell-glow' : ''}`
                   }`}
                 >
                   {/* Animated background overlay */}
-                  <div className={`absolute inset-0 opacity-20 ${
-                    isBuy ? 'bg-gradient-to-r from-transparent via-green-400/10 to-transparent' : 'bg-gradient-to-r from-transparent via-red-400/10 to-transparent'
-                  }`} style={{ animation: 'wave 3s ease-in-out infinite' }} />
+                  <div className={`absolute inset-0 opacity-25 ${
+                    isBuy ? 'bg-gradient-to-r from-transparent via-green-400/15 to-transparent' : 'bg-gradient-to-r from-transparent via-red-400/15 to-transparent'
+                  }`} style={{ 
+                    animation: `wave ${3 + Math.random() * 2}s ease-in-out infinite`,
+                    animationDelay: `${Math.random() * 2}s`
+                  }} />
+                  
+                  {/* Additional organic shimmer effect */}
+                  <div className={`absolute inset-0 opacity-10 ${
+                    isBuy ? 'bg-gradient-to-br from-green-300/20 via-transparent to-green-500/20' : 'bg-gradient-to-br from-red-300/20 via-transparent to-red-500/20'
+                  }`} style={{ 
+                    animation: `gradient-shift ${5 + Math.random() * 3}s ease infinite`,
+                    animationDelay: `${Math.random() * 3}s`
+                  }} />
                   
                   <div className="flex-1 relative z-10">
                     <div className={`font-bold text-lg tracking-wider symbol-glow ${
