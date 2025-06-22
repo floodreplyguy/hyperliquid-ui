@@ -185,96 +185,139 @@ export default function Page() {
           </div>
 
           <section>
-            <h2 className="text-xl font-bold mb-3">Time-Based Performance Analysis</h2>
+            <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent">
+              Time-Based Performance Analysis
+            </h2>
             <div className="grid md:grid-cols-3 gap-6">
 
               {/* Days of Week */}
-              <div className="bg-white border rounded-lg p-4">
-                <h3 className="font-semibold mb-3 text-green-600">📅 Days of Week</h3>
-                <div className="space-y-2 text-sm">
-                  {Object.entries(stats.timeBreakdown?.days || {}).length > 0 ? (
-                    Object.entries(stats.timeBreakdown.days).map(([day, data]) => (
-                      <div key={day} className="flex justify-between items-center">
-                        <span className={`${data.trades >= 10 && data.winRate > 0.55 && data.avgPnl > 0 ? 'font-bold text-green-600' : ''}`}>
-                          {day.slice(0, 3)}
-                        </span>
-                        <div className="text-right">
-                          <div>{data.trades} trades</div>
-                          <div className={`${data.winRate > 0.55 ? 'text-green-600' : data.winRate < 0.45 ? 'text-red-600' : 'text-gray-600'}`}>
-                            {(data.winRate * 100).toFixed(0)}% wins
-                          </div>
-                          <div className={`${data.avgPnl > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {usd(data.avgPnl)} avg
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-gray-500">No data available</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Trading Sessions */}
-              <div className="bg-white border rounded-lg p-4">
-                <h3 className="font-semibold mb-3 text-blue-600">🌍 Trading Sessions</h3>
-                <div className="space-y-2 text-sm">
-                  {Object.entries(stats.timeBreakdown?.sessions || {}).length > 0 ? (
-                    Object.entries(stats.timeBreakdown.sessions).map(([session, data]) => (
-                      <div key={session} className="flex justify-between items-center">
-                        <span className={`${data.trades >= 15 && data.winRate > 0.55 && data.avgPnl > 0 ? 'font-bold text-blue-600' : ''}`}>
-                          {session}
-                        </span>
-                        <div className="text-right">
-                          <div>{data.trades} trades</div>
-                          <div className={`${data.winRate > 0.55 ? 'text-green-600' : data.winRate < 0.45 ? 'text-red-600' : 'text-gray-600'}`}>
-                            {(data.winRate * 100).toFixed(0)}% wins
-                          </div>
-                          <div className={`${data.avgPnl > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {usd(data.avgPnl)} avg
+              <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-gray-700/50 rounded-xl p-5 backdrop-blur-sm relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent pointer-events-none" />
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-3 h-3 rounded-full bg-blue-400" />
+                    <h3 className="font-bold text-blue-400 text-sm tracking-wider">DAYS OF WEEK</h3>
+                  </div>
+                  <div className="space-y-3 text-sm">
+                    {Object.entries(stats.timeBreakdown?.days || {}).length > 0 ? (
+                      Object.entries(stats.timeBreakdown.days).map(([day, data]) => (
+                        <div key={day} className="flex justify-between items-center py-2 border-b border-gray-700/30 last:border-b-0">
+                          <span className={`font-medium ${data.trades >= 10 && data.winRate > 0.55 && data.avgPnl > 0 ? 'text-green-400' : 'text-gray-300'}`}>
+                            {day}
+                          </span>
+                          <div className="text-right space-y-1">
+                            <div className="text-gray-400 text-xs">{data.trades} trades</div>
+                            <div className={`text-xs font-bold ${data.winRate > 0.55 ? 'text-green-400' : data.winRate < 0.45 ? 'text-red-400' : 'text-gray-400'}`}>
+                              {(data.winRate * 100).toFixed(0)}% wins
+                            </div>
+                            <div className={`text-xs ${data.avgPnl > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {usd(data.avgPnl)} avg
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-gray-500">No data available</div>
-                  )}
-                  <div className="text-xs text-gray-500 mt-2">
-                    <div>Asia: 0-8 UTC</div>
-                    <div>Europe: 8-16 UTC</div>
-                    <div>US: 16-24 UTC</div>
+                      ))
+                    ) : (
+                      <div className="text-gray-500 text-center py-8">No data available</div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Best Hours */}
-              <div className="bg-white border rounded-lg p-4">
-                <h3 className="font-semibold mb-3 text-purple-600">⏰ Hour Performance</h3>
-                <div className="space-y-1 text-sm max-h-64 overflow-y-auto">
-                  {Object.entries(stats.timeBreakdown?.hours || {}).length > 0 ? (
-                    Object.entries(stats.timeBreakdown.hours)
-                      .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                      .map(([hour, data]) => (
-                      <div key={hour} className="flex justify-between items-center">
-                        <span className={`${data.trades >= 5 && data.winRate > 0.6 && data.avgPnl > 0 ? 'font-bold text-purple-600' : ''}`}>
-                          {hour}:00
-                        </span>
-                        <div className="text-right">
-                          <span className="text-xs">{data.trades}</span>
-                          <span className={`ml-2 ${data.winRate > 0.6 ? 'text-green-600' : data.winRate < 0.4 ? 'text-red-600' : 'text-gray-600'}`}>
-                            {(data.winRate * 100).toFixed(0)}%
-                          </span>
+              {/* Trading Sessions */}
+              <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-gray-700/50 rounded-xl p-5 backdrop-blur-sm relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent pointer-events-none" />
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-3 h-3 rounded-full bg-cyan-400" />
+                    <h3 className="font-bold text-cyan-400 text-sm tracking-wider">TRADING SESSIONS</h3>
+                  </div>
+                  <div className="space-y-3 text-sm">
+                    {Object.entries(stats.timeBreakdown?.sessions || {}).length > 0 ? (
+                      Object.entries(stats.timeBreakdown.sessions).map(([session, data]) => (
+                        <div key={session} className="flex justify-between items-center py-2 border-b border-gray-700/30 last:border-b-0">
+                          <div>
+                            <span className={`font-medium block ${data.trades >= 10 && data.winRate > 0.55 && data.avgPnl > 0 ? 'text-green-400' : 'text-gray-300'}`}>
+                              {session}
+                            </span>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {session === 'Asia' && '0-8 UTC'}
+                              {session === 'Europe' && '8-16 UTC'}
+                              {session === 'US' && '16-24 UTC'}
+                            </div>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <div className="text-gray-400 text-xs">{data.trades} trades</div>
+                            <div className={`text-xs font-bold ${data.winRate > 0.55 ? 'text-green-400' : data.winRate < 0.45 ? 'text-red-400' : 'text-gray-400'}`}>
+                              {(data.winRate * 100).toFixed(0)}% wins
+                            </div>
+                            <div className={`text-xs ${data.avgPnl > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {usd(data.avgPnl)} avg
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-gray-500">No data available</div>
-                  )}
+                      ))
+                    ) : (
+                      <div className="text-gray-500 text-center py-8">No data available</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Hour Performance */}
+              <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-gray-700/50 rounded-xl p-5 backdrop-blur-sm relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent pointer-events-none" />
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-3 h-3 rounded-full bg-purple-400" />
+                    <h3 className="font-bold text-purple-400 text-sm tracking-wider">HOUR PERFORMANCE</h3>
+                  </div>
+                  <div className="space-y-2 text-xs max-h-80 overflow-y-auto custom-scrollbar">
+                    {Object.entries(stats.timeBreakdown?.hours || {}).length > 0 ? (
+                      Object.entries(stats.timeBreakdown.hours)
+                        .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                        .map(([hour, data]) => (
+                          <div key={hour} className="flex justify-between items-center py-2 px-2 rounded-lg hover:bg-gray-700/30 transition-colors">
+                            <span className={`font-medium ${data.trades >= 5 && data.winRate > 0.55 && data.avgPnl > 0 ? 'text-green-400' : 'text-gray-300'}`}>
+                              {hour.padStart(2, '0')}:00
+                            </span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-gray-400">{data.trades}</span>
+                              <div className={`w-8 h-4 rounded-full flex items-center justify-center text-xs font-bold ${
+                                data.winRate > 0.55 ? 'bg-green-400/20 text-green-400' : 
+                                data.winRate < 0.45 ? 'bg-red-400/20 text-red-400' : 
+                                'bg-gray-600/20 text-gray-400'
+                              }`}>
+                                {(data.winRate * 100).toFixed(0)}%
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                    ) : (
+                      <div className="text-gray-500 text-center py-8">No data available</div>
+                    )}
+                  </div>
                 </div>
               </div>
 
             </div>
           </section>
+
+          <style jsx>{`
+            .custom-scrollbar::-webkit-scrollbar {
+              width: 4px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background: rgba(75, 85, 99, 0.1);
+              border-radius: 2px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background: rgba(147, 51, 234, 0.5);
+              border-radius: 2px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+              background: rgba(147, 51, 234, 0.7);
+            }
+          `}</style>
 
           {stats.openPositions && stats.openPositions.length > 0 && (
             <section>
