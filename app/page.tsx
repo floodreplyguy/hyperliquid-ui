@@ -198,24 +198,39 @@ export default function Page() {
                     <div className="w-3 h-3 rounded-full bg-blue-400" />
                     <h3 className="font-bold text-blue-400 text-sm tracking-wider">DAYS OF WEEK</h3>
                   </div>
-                  <div className="space-y-3 text-sm">
+                  <div className="space-y-3">
                     {Object.entries(stats.timeBreakdown?.days || {}).length > 0 ? (
-                      Object.entries(stats.timeBreakdown.days).map(([day, data]) => (
-                        <div key={day} className="flex justify-between items-center py-2 border-b border-gray-700/30 last:border-b-0">
-                          <span className={`font-medium ${data.trades >= 10 && data.winRate > 0.55 && data.avgPnl > 0 ? 'text-green-400' : 'text-gray-300'}`}>
-                            {day}
-                          </span>
-                          <div className="text-right space-y-1">
-                            <div className="text-gray-400 text-xs">{data.trades} trades</div>
-                            <div className={`text-xs font-bold ${data.winRate > 0.55 ? 'text-green-400' : data.winRate < 0.45 ? 'text-red-400' : 'text-gray-400'}`}>
+                      Object.entries(stats.timeBreakdown.days).map(([day, data]) => {
+                        const getColorClass = () => {
+                          if (data.trades < 5) return 'bg-gray-700/50 border-gray-600';
+                          if (data.winRate >= 0.65 && data.avgPnl > 0) return 'bg-green-600/80 border-green-500';
+                          if (data.winRate >= 0.55 && data.avgPnl > 0) return 'bg-green-500/60 border-green-400';
+                          if (data.winRate >= 0.45) return 'bg-yellow-600/60 border-yellow-500';
+                          return 'bg-red-600/80 border-red-500';
+                        };
+                        
+                        const getTextColor = () => {
+                          if (data.trades < 5) return 'text-gray-400';
+                          if (data.winRate >= 0.55 && data.avgPnl > 0) return 'text-white';
+                          if (data.winRate >= 0.45) return 'text-white';
+                          return 'text-white';
+                        };
+
+                        return (
+                          <div key={day} className={`${getColorClass()} border rounded-lg p-3 transition-all hover:scale-105`}>
+                            <div className={`font-bold text-sm ${getTextColor()}`}>{day}</div>
+                            <div className={`text-xs ${getTextColor()} mt-1`}>
+                              {data.trades} trades
+                            </div>
+                            <div className={`text-xs font-bold ${getTextColor()}`}>
                               {(data.winRate * 100).toFixed(0)}% wins
                             </div>
-                            <div className={`text-xs ${data.avgPnl > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            <div className={`text-xs ${getTextColor()}`}>
                               {usd(data.avgPnl)} avg
                             </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     ) : (
                       <div className="text-gray-500 text-center py-8">No data available</div>
                     )}
@@ -231,31 +246,47 @@ export default function Page() {
                     <div className="w-3 h-3 rounded-full bg-cyan-400" />
                     <h3 className="font-bold text-cyan-400 text-sm tracking-wider">TRADING SESSIONS</h3>
                   </div>
-                  <div className="space-y-3 text-sm">
+                  <div className="space-y-3">
                     {Object.entries(stats.timeBreakdown?.sessions || {}).length > 0 ? (
-                      Object.entries(stats.timeBreakdown.sessions).map(([session, data]) => (
-                        <div key={session} className="flex justify-between items-center py-2 border-b border-gray-700/30 last:border-b-0">
-                          <div>
-                            <span className={`font-medium block ${data.trades >= 10 && data.winRate > 0.55 && data.avgPnl > 0 ? 'text-green-400' : 'text-gray-300'}`}>
-                              {session}
-                            </span>
-                            <div className="text-xs text-gray-500 mt-1">
-                              {session === 'Asia' && '0-8 UTC'}
-                              {session === 'Europe' && '8-16 UTC'}
-                              {session === 'US' && '16-24 UTC'}
+                      Object.entries(stats.timeBreakdown.sessions).map(([session, data]) => {
+                        const getColorClass = () => {
+                          if (data.trades < 10) return 'bg-gray-700/50 border-gray-600';
+                          if (data.winRate >= 0.65 && data.avgPnl > 0) return 'bg-green-600/80 border-green-500';
+                          if (data.winRate >= 0.55 && data.avgPnl > 0) return 'bg-green-500/60 border-green-400';
+                          if (data.winRate >= 0.45) return 'bg-yellow-600/60 border-yellow-500';
+                          return 'bg-red-600/80 border-red-500';
+                        };
+                        
+                        const getTextColor = () => {
+                          if (data.trades < 10) return 'text-gray-400';
+                          return 'text-white';
+                        };
+
+                        const getTimeRange = () => {
+                          if (session === 'Asia') return '0-8 UTC';
+                          if (session === 'Europe') return '8-16 UTC';
+                          if (session === 'US') return '16-24 UTC';
+                          return '';
+                        };
+
+                        return (
+                          <div key={session} className={`${getColorClass()} border rounded-lg p-3 transition-all hover:scale-105`}>
+                            <div className={`font-bold text-sm ${getTextColor()}`}>{session}</div>
+                            <div className={`text-xs ${getTextColor()} opacity-80`}>
+                              {getTimeRange()}
                             </div>
-                          </div>
-                          <div className="text-right space-y-1">
-                            <div className="text-gray-400 text-xs">{data.trades} trades</div>
-                            <div className={`text-xs font-bold ${data.winRate > 0.55 ? 'text-green-400' : data.winRate < 0.45 ? 'text-red-400' : 'text-gray-400'}`}>
+                            <div className={`text-xs ${getTextColor()} mt-1`}>
+                              {data.trades} trades
+                            </div>
+                            <div className={`text-xs font-bold ${getTextColor()}`}>
                               {(data.winRate * 100).toFixed(0)}% wins
                             </div>
-                            <div className={`text-xs ${data.avgPnl > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            <div className={`text-xs ${getTextColor()}`}>
                               {usd(data.avgPnl)} avg
                             </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     ) : (
                       <div className="text-gray-500 text-center py-8">No data available</div>
                     )}
@@ -271,36 +302,47 @@ export default function Page() {
                     <div className="w-3 h-3 rounded-full bg-purple-400" />
                     <h3 className="font-bold text-purple-400 text-sm tracking-wider">HOUR PERFORMANCE</h3>
                   </div>
-                  <div className="space-y-2 text-xs max-h-80 overflow-y-auto custom-scrollbar">
+                  <div className="grid grid-cols-4 gap-2 max-h-80 overflow-y-auto custom-scrollbar">
                     {Object.entries(stats.timeBreakdown?.hours || {}).length > 0 ? (
                       Object.entries(stats.timeBreakdown.hours)
                         .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                        .map(([hour, data]) => (
-                          <div key={hour} className="flex justify-between items-center py-2 px-2 rounded-lg hover:bg-gray-700/30 transition-colors">
-                            <span className={`font-medium ${data.trades >= 5 && data.winRate > 0.55 && data.avgPnl > 0 ? 'text-green-400' : 'text-gray-300'}`}>
-                              {hour.padStart(2, '0')}:00
-                            </span>
-                            <div className="flex items-center gap-3">
-                              <span className="text-gray-400">{data.trades}</span>
-                              <div className={`w-8 h-4 rounded-full flex items-center justify-center text-xs font-bold ${
-                                data.winRate > 0.55 ? 'bg-green-400/20 text-green-400' : 
-                                data.winRate < 0.45 ? 'bg-red-400/20 text-red-400' : 
-                                'bg-gray-600/20 text-gray-400'
-                              }`}>
+                        .map(([hour, data]) => {
+                          const getColorClass = () => {
+                            if (data.trades < 3) return 'bg-gray-700/50 border-gray-600';
+                            if (data.winRate >= 0.7 && data.avgPnl > 0) return 'bg-green-600/80 border-green-500';
+                            if (data.winRate >= 0.6 && data.avgPnl > 0) return 'bg-green-500/60 border-green-400';
+                            if (data.winRate >= 0.5) return 'bg-yellow-600/60 border-yellow-500';
+                            return 'bg-red-600/80 border-red-500';
+                          };
+                          
+                          const getTextColor = () => {
+                            if (data.trades < 3) return 'text-gray-400';
+                            return 'text-white';
+                          };
+
+                          return (
+                            <div key={hour} className={`${getColorClass()} border rounded-lg p-2 transition-all hover:scale-105 text-center`}>
+                              <div className={`font-bold text-xs ${getTextColor()}`}>
+                                {hour.padStart(2, '0')}:00
+                              </div>
+                              <div className={`text-xs ${getTextColor()} mt-1`}>
+                                {data.trades}
+                              </div>
+                              <div className={`text-xs font-bold ${getTextColor()}`}>
                                 {(data.winRate * 100).toFixed(0)}%
                               </div>
                             </div>
-                          </div>
-                        ))
+                          );
+                        })
                     ) : (
-                      <div className="text-gray-500 text-center py-8">No data available</div>
+                      <div className="text-gray-500 text-center py-8 col-span-4">No data available</div>
                     )}
                   </div>
                 </div>
               </div>
 
             </div>
-          </section>
+          </section></style>
 
           <style jsx>{`
             .custom-scrollbar::-webkit-scrollbar {
