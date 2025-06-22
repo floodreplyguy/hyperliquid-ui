@@ -190,106 +190,117 @@ export default function Page() {
             </h2>
             <div className="grid md:grid-cols-3 gap-6">
 
-              {/* Days of Week */}
-              <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-gray-700/50 rounded-xl p-5 backdrop-blur-sm relative overflow-hidden">
+              {/* Days of Week - Compact Heatmap */}
+              <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-gray-700/50 rounded-xl p-4 backdrop-blur-sm relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent pointer-events-none" />
                 <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-3 h-3 rounded-full bg-blue-400" />
-                    <h3 className="font-bold text-blue-400 text-sm tracking-wider">DAYS OF WEEK</h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-blue-400 text-xs tracking-wider">WEEKLY PERFORMANCE</h3>
+                    <div className="text-xs text-gray-400">Win Rate</div>
                   </div>
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-7 gap-1">
                     {Object.entries(stats.timeBreakdown?.days || {}).length > 0 ? (
-                      Object.entries(stats.timeBreakdown.days).map(([day, data]) => {
-                        const getColorClass = () => {
-                          if (data.trades < 5) return 'bg-gray-700/50 border-gray-600';
-                          if (data.winRate >= 0.65 && data.avgPnl > 0) return 'bg-green-600/80 border-green-500';
-                          if (data.winRate >= 0.55 && data.avgPnl > 0) return 'bg-green-500/60 border-green-400';
-                          if (data.winRate >= 0.45) return 'bg-yellow-600/60 border-yellow-500';
-                          return 'bg-red-600/80 border-red-500';
-                        };
-                        
-                        const getTextColor = () => {
-                          if (data.trades < 5) return 'text-gray-400';
-                          if (data.winRate >= 0.55 && data.avgPnl > 0) return 'text-white';
-                          if (data.winRate >= 0.45) return 'text-white';
-                          return 'text-white';
+                      ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
+                        const data = stats.timeBreakdown.days[day] || { trades: 0, winRate: 0, avgPnl: 0 };
+                        const getColor = () => {
+                          if (data.trades < 3) return 'bg-gray-700/60';
+                          if (data.winRate >= 0.7 && data.avgPnl > 0) return 'bg-green-500';
+                          if (data.winRate >= 0.6 && data.avgPnl > 0) return 'bg-green-400';
+                          if (data.winRate >= 0.5) return 'bg-yellow-500';
+                          if (data.winRate >= 0.4) return 'bg-orange-500';
+                          return 'bg-red-500';
                         };
 
                         return (
-                          <div key={day} className={`${getColorClass()} border rounded-lg p-3 transition-all hover:scale-105`}>
-                            <div className={`font-bold text-sm ${getTextColor()}`}>{day}</div>
-                            <div className={`text-xs ${getTextColor()} mt-1`}>
-                              {data.trades} trades
+                          <div key={day} className="text-center">
+                            <div className="text-xs text-gray-400 mb-1 font-medium">
+                              {day.slice(0, 3)}
                             </div>
-                            <div className={`text-xs font-bold ${getTextColor()}`}>
-                              {(data.winRate * 100).toFixed(0)}% wins
-                            </div>
-                            <div className={`text-xs ${getTextColor()}`}>
-                              {usd(data.avgPnl)} avg
+                            <div 
+                              className={`${getColor()} rounded-lg h-12 flex flex-col justify-center items-center border border-gray-600/30 transition-all hover:scale-105 cursor-pointer`}
+                              title={`${day}: ${data.trades} trades, ${(data.winRate * 100).toFixed(0)}% win rate, ${usd(data.avgPnl)} avg`}
+                            >
+                              <div className="text-xs font-bold text-white">
+                                {data.trades > 0 ? `${(data.winRate * 100).toFixed(0)}%` : '-'}
+                              </div>
+                              <div className="text-xs text-white/80">
+                                {data.trades > 0 ? data.trades : '-'}
+                              </div>
                             </div>
                           </div>
                         );
                       })
                     ) : (
-                      <div className="text-gray-500 text-center py-8">No data available</div>
+                      <div className="text-gray-500 text-center py-4 col-span-7">No data available</div>
                     )}
+                  </div>
+                  <div className="flex justify-between mt-2 text-xs text-gray-500">
+                    <span>Low</span>
+                    <span>High</span>
                   </div>
                 </div>
               </div>
 
-              {/* Trading Sessions */}
-              <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-gray-700/50 rounded-xl p-5 backdrop-blur-sm relative overflow-hidden">
+              {/* Trading Sessions - Compact Heatmap */}
+              <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-gray-700/50 rounded-xl p-4 backdrop-blur-sm relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent pointer-events-none" />
                 <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-3 h-3 rounded-full bg-cyan-400" />
-                    <h3 className="font-bold text-cyan-400 text-sm tracking-wider">TRADING SESSIONS</h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-cyan-400 text-xs tracking-wider">SESSION PERFORMANCE</h3>
+                    <div className="text-xs text-gray-400">Win Rate</div>
                   </div>
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
                     {Object.entries(stats.timeBreakdown?.sessions || {}).length > 0 ? (
-                      Object.entries(stats.timeBreakdown.sessions).map(([session, data]) => {
-                        const getColorClass = () => {
-                          if (data.trades < 10) return 'bg-gray-700/50 border-gray-600';
-                          if (data.winRate >= 0.65 && data.avgPnl > 0) return 'bg-green-600/80 border-green-500';
-                          if (data.winRate >= 0.55 && data.avgPnl > 0) return 'bg-green-500/60 border-green-400';
-                          if (data.winRate >= 0.45) return 'bg-yellow-600/60 border-yellow-500';
-                          return 'bg-red-600/80 border-red-500';
-                        };
-                        
-                        const getTextColor = () => {
-                          if (data.trades < 10) return 'text-gray-400';
-                          return 'text-white';
+                      ['Asia', 'Europe', 'US'].map((session) => {
+                        const data = stats.timeBreakdown.sessions[session] || { trades: 0, winRate: 0, avgPnl: 0 };
+                        const getColor = () => {
+                          if (data.trades < 5) return 'bg-gray-700/60';
+                          if (data.winRate >= 0.7 && data.avgPnl > 0) return 'bg-green-500';
+                          if (data.winRate >= 0.6 && data.avgPnl > 0) return 'bg-green-400';
+                          if (data.winRate >= 0.5) return 'bg-yellow-500';
+                          if (data.winRate >= 0.4) return 'bg-orange-500';
+                          return 'bg-red-500';
                         };
 
                         const getTimeRange = () => {
-                          if (session === 'Asia') return '0-8 UTC';
-                          if (session === 'Europe') return '8-16 UTC';
-                          if (session === 'US') return '16-24 UTC';
+                          if (session === 'Asia') return '0-8h';
+                          if (session === 'Europe') return '8-16h';
+                          if (session === 'US') return '16-24h';
                           return '';
                         };
 
                         return (
-                          <div key={session} className={`${getColorClass()} border rounded-lg p-3 transition-all hover:scale-105`}>
-                            <div className={`font-bold text-sm ${getTextColor()}`}>{session}</div>
-                            <div className={`text-xs ${getTextColor()} opacity-80`}>
+                          <div key={session} className="text-center">
+                            <div className="text-xs text-gray-400 mb-1 font-medium">
+                              {session}
+                            </div>
+                            <div className="text-xs text-gray-500 mb-2">
                               {getTimeRange()}
                             </div>
-                            <div className={`text-xs ${getTextColor()} mt-1`}>
-                              {data.trades} trades
-                            </div>
-                            <div className={`text-xs font-bold ${getTextColor()}`}>
-                              {(data.winRate * 100).toFixed(0)}% wins
-                            </div>
-                            <div className={`text-xs ${getTextColor()}`}>
-                              {usd(data.avgPnl)} avg
+                            <div 
+                              className={`${getColor()} rounded-lg h-16 flex flex-col justify-center items-center border border-gray-600/30 transition-all hover:scale-105 cursor-pointer`}
+                              title={`${session}: ${data.trades} trades, ${(data.winRate * 100).toFixed(0)}% win rate, ${usd(data.avgPnl)} avg`}
+                            >
+                              <div className="text-sm font-bold text-white">
+                                {data.trades > 0 ? `${(data.winRate * 100).toFixed(0)}%` : '-'}
+                              </div>
+                              <div className="text-xs text-white/80">
+                                {data.trades > 0 ? `${data.trades} trades` : '-'}
+                              </div>
+                              <div className="text-xs text-white/70">
+                                {data.trades > 0 ? usd(data.avgPnl) : '-'}
+                              </div>
                             </div>
                           </div>
                         );
                       })
                     ) : (
-                      <div className="text-gray-500 text-center py-8">No data available</div>
+                      <div className="text-gray-500 text-center py-4 col-span-3">No data available</div>
                     )}
+                  </div>
+                  <div className="flex justify-between mt-2 text-xs text-gray-500">
+                    <span>Poor</span>
+                    <span>Excellent</span>
                   </div>
                 </div>
               </div>
