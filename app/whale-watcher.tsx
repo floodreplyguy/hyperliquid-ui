@@ -19,7 +19,7 @@ export default function WhaleWatcher() {
   const [assetFilter, setAssetFilter] = useState('ALL');
   const [intensity, setIntensity] = useState<number>(1);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>();
 
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
