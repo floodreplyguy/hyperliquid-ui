@@ -177,17 +177,6 @@ export default function Page() {
                  (stats.winStreaks?.current || 0) < 0 ? 'Losing streak' : 'No streak'}
               </p>
             </div>
-            <div className="border rounded p-3 bg-white">
-              <p className="text-xs text-gray-500 mb-1">📊 Best / Worst Streak</p>
-              <p className="text-base font-medium">
-                <span className="text-green-600">+{stats.winStreaks?.best || 0}</span>
-                <span className="text-gray-400 mx-1">/</span>
-                <span className="text-red-600">{stats.winStreaks?.worst || 0}</span>
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                Historical extremes
-              </p>
-            </div>
           </StatsGrid>
 
           <div className="grid md:grid-cols-2 gap-8">
