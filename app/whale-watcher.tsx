@@ -17,12 +17,12 @@ export default function WhaleWatcher() {
   const [connected, setConnected] = useState(false);
   const [threshold, setThreshold] = useState(50000);
   const [assetFilter, setAssetFilter] = useState('ALL');
-  const [intensity, setIntensity] = useState(1);
+  const [intensity, setIntensity] = useState<number>(1);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
 
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
 
   // Enhanced oscillator sound logic
   const playTradeSound = (notional: number, isBuy: boolean) => {
