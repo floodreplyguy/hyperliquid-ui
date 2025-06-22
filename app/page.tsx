@@ -138,14 +138,14 @@ export default function Page() {
             <div className="border rounded p-3 bg-white">
               <p className="text-xs text-gray-500 mb-1">🎯 Whale Confidence Score</p>
               <p className={`text-2xl font-bold ${
-                stats.confidenceScore >= 70 ? 'text-green-600' : 
-                stats.confidenceScore >= 50 ? 'text-yellow-600' : 'text-red-600'
+                (stats.confidenceScore || 0) >= 70 ? 'text-green-600' : 
+                (stats.confidenceScore || 0) >= 50 ? 'text-yellow-600' : 'text-red-600'
               }`}>
-                {stats.confidenceScore}%
+                {stats.confidenceScore || 0}%
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                {stats.confidenceScore >= 70 ? 'High confidence' :
-                 stats.confidenceScore >= 50 ? 'Medium confidence' : 'Low confidence'}
+                {(stats.confidenceScore || 0) >= 70 ? 'High confidence' :
+                 (stats.confidenceScore || 0) >= 50 ? 'Medium confidence' : 'Low confidence'}
               </p>
             </div>
             <div className="border rounded p-3 bg-white">
