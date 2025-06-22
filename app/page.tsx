@@ -58,6 +58,7 @@ interface ApiResponse {
   positionTendency: string;
   recentLongs: number;
   recentShorts: number;
+  confidenceScore: number;
   timeBreakdown: {
     days: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
     sessions: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
@@ -134,6 +135,19 @@ export default function Page() {
             <Stat label="Fees" value={usd(stats.fees)} />
             <Stat label="Avg Notional" value={usd(stats.avgNotional)} />
             <Stat label="Most Traded" value={stats.mostTraded} />
+            <div className="border rounded p-3 bg-white">
+              <p className="text-xs text-gray-500 mb-1">🎯 Whale Confidence Score</p>
+              <p className={`text-2xl font-bold ${
+                stats.confidenceScore >= 70 ? 'text-green-600' : 
+                stats.confidenceScore >= 50 ? 'text-yellow-600' : 'text-red-600'
+              }`}>
+                {stats.confidenceScore}%
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {stats.confidenceScore >= 70 ? 'High confidence' :
+                 stats.confidenceScore >= 50 ? 'Medium confidence' : 'Low confidence'}
+              </p>
+            </div>
             <div className="border rounded p-3 bg-white">
               <p className="text-xs text-gray-500 mb-1">Position Tendency (Last 100)</p>
               <p className={`text-base font-medium ${
