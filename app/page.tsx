@@ -167,22 +167,22 @@ export default function Page() {
             <div className="border rounded p-3 bg-white">
               <p className="text-xs text-gray-500 mb-1">🔥 Current Win Streak</p>
               <p className={`text-base font-medium ${
-                stats.winStreaks.current > 0 ? 'text-green-600' : 
-                stats.winStreaks.current < 0 ? 'text-red-600' : 'text-gray-600'
+                (stats.winStreaks?.current || 0) > 0 ? 'text-green-600' : 
+                (stats.winStreaks?.current || 0) < 0 ? 'text-red-600' : 'text-gray-600'
               }`}>
-                {stats.winStreaks.current > 0 ? `+${stats.winStreaks.current}` : stats.winStreaks.current}
+                {(stats.winStreaks?.current || 0) > 0 ? `+${stats.winStreaks?.current || 0}` : (stats.winStreaks?.current || 0)}
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                {stats.winStreaks.current > 0 ? 'Winning streak' : 
-                 stats.winStreaks.current < 0 ? 'Losing streak' : 'No streak'}
+                {(stats.winStreaks?.current || 0) > 0 ? 'Winning streak' : 
+                 (stats.winStreaks?.current || 0) < 0 ? 'Losing streak' : 'No streak'}
               </p>
             </div>
             <div className="border rounded p-3 bg-white">
               <p className="text-xs text-gray-500 mb-1">📊 Best / Worst Streak</p>
               <p className="text-base font-medium">
-                <span className="text-green-600">+{stats.winStreaks.best}</span>
+                <span className="text-green-600">+{stats.winStreaks?.best || 0}</span>
                 <span className="text-gray-400 mx-1">/</span>
-                <span className="text-red-600">{stats.winStreaks.worst}</span>
+                <span className="text-red-600">{stats.winStreaks?.worst || 0}</span>
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 Historical extremes
