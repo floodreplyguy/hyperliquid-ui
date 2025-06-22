@@ -9,6 +9,7 @@ interface WhaleTrade {
   dir: 'A' | 'B';
   wallet: string;
   timestamp: number;
+  receivedAt: number; // When we received this trade locally
 }
 
 export default function WhaleWatcher() {
@@ -16,6 +17,7 @@ export default function WhaleWatcher() {
   const [connected, setConnected] = useState(false);
   const [threshold, setThreshold] = useState(50000);
   const [assetFilter, setAssetFilter] = useState('ALL');
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
   useEffect(() => {
     const ws = new WebSocket('wss://api.hyperliquid.xyz/ws');
@@ -42,6 +44,7 @@ export default function WhaleWatcher() {
             dir: f.side === 'A' ? 'A' : 'B',
             wallet: f.users?.[0] ?? 'unknown',
             timestamp: f.time ?? Date.now(),
+            receivedAt: Date.now(),
           })) as WhaleTrade[];
 
         if (fresh.length > 0) {
@@ -69,7 +72,24 @@ export default function WhaleWatcher() {
     return () => ws.close();
   }, [threshold]);
 
+  // Update current time every second to refresh relative timestamps
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const usd = (n: number) => `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  
+  const getTimeAgo = (receivedAt: number) => {
+    const seconds = Math.floor((currentTime - receivedAt) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  };
 
   return (
     <div className="fixed top-0 right-0 w-[380px] h-screen overflow-hidden relative">
@@ -420,13 +440,18 @@ export default function WhaleWatcher() {
                     <div className="text-xs text-gray-300 leading-tight font-medium">
                       {usd(t.notional)} @ ${t.price.toLocaleString()}
                     </div>
-                    <div className={`text-xs font-bold mt-1 flex items-center gap-1 ${
-                      isBuy ? 'text-green-400' : 'text-red-400'
-                    }`}>
-                      <span className={`inline-block w-2 h-2 rounded-full ${
-                        isBuy ? 'bg-green-400' : 'bg-red-400'
-                      }`} style={{ animation: 'whale-pulse 2s ease-in-out infinite' }} />
-                      {isBuy ? 'BUY' : 'SELL'}
+                    <div className="flex items-center justify-between mt-1">
+                      <div className={`text-xs font-bold flex items-center gap-1 ${
+                        isBuy ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        <span className={`inline-block w-2 h-2 rounded-full ${
+                          isBuy ? 'bg-green-400' : 'bg-red-400'
+                        }`} style={{ animation: 'whale-pulse 2s ease-in-out infinite' }} />
+                        {isBuy ? 'BUY' : 'SELL'}
+                      </div>
+                      <div className="text-xs text-gray-500 font-medium">
+                        {getTimeAgo(t.receivedAt)}
+                      </div>
                     </div>
                   </div>
                   <button
