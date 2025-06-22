@@ -59,6 +59,7 @@ interface ApiResponse {
   recentLongs: number;
   recentShorts: number;
   confidenceScore: number;
+  winStreaks: { current: number; best: number; worst: number };
   timeBreakdown: {
     days: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
     sessions: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
@@ -161,6 +162,30 @@ export default function Page() {
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 {stats.recentLongs}L / {stats.recentShorts}S
+              </p>
+            </div>
+            <div className="border rounded p-3 bg-white">
+              <p className="text-xs text-gray-500 mb-1">🔥 Current Win Streak</p>
+              <p className={`text-base font-medium ${
+                stats.winStreaks.current > 0 ? 'text-green-600' : 
+                stats.winStreaks.current < 0 ? 'text-red-600' : 'text-gray-600'
+              }`}>
+                {stats.winStreaks.current > 0 ? `+${stats.winStreaks.current}` : stats.winStreaks.current}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {stats.winStreaks.current > 0 ? 'Winning streak' : 
+                 stats.winStreaks.current < 0 ? 'Losing streak' : 'No streak'}
+              </p>
+            </div>
+            <div className="border rounded p-3 bg-white">
+              <p className="text-xs text-gray-500 mb-1">📊 Best / Worst Streak</p>
+              <p className="text-base font-medium">
+                <span className="text-green-600">+{stats.winStreaks.best}</span>
+                <span className="text-gray-400 mx-1">/</span>
+                <span className="text-red-600">{stats.winStreaks.worst}</span>
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Historical extremes
               </p>
             </div>
           </StatsGrid>
