@@ -488,7 +488,7 @@ export default function Page() {
 
       <div className="relative z-10 flex h-screen">
         {/* Main Content Area - Better space utilization */}
-        <div className="flex-1 flex flex-col mr-4">
+        <div className="flex-1 flex flex-col mr-4 relative z-20">
           {/* Header - Compact */}
           <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b-2 border-green-500 p-4">
             <div className="flex items-center justify-between mb-4">
@@ -577,8 +577,8 @@ export default function Page() {
                                 <div>💎 <span style={{color: '#b9f2ff'}}>Diamond</span>: 80%+ (Elite)</div>
                                 <div>🏆 <span style={{color: '#e5e7eb'}}>Platinum</span>: 65-79% (Excellent)</div>
                                 <div>🥇 <span style={{color: '#fbbf24'}}>Gold</span>: 50-64% (Good)</div>
-                                <div>🥈 <span style={{color: '#9ca3af'}}>Silver</span>: 35-49% (Average)</div>
-                                <div>🥉 <span style={{color: '#cd7f32'}}>Bronze</span>: Below 35% (Needs Improvement)</div>
+                                <div>🥈 <span style={{color: '#9ca3af'}}>Silver</span>: 25-49% (Below Average)</div>
+                                <div>🥉 <span style={{color: '#cd7f32'}}>Bronze</span>: Below 25% (Needs Improvement)</div>
                               </div>
                             </div>
                           </div>
@@ -738,7 +738,7 @@ export default function Page() {
         </div>
 
         {/* Whale Watcher Sidebar - Optimized width */}
-        <div className="w-96 border-l-2 border-green-500 relative flex-shrink-0">
+        <div className="w-96 border-l-2 border-green-500 relative flex-shrink-0 z-10">
           <button
             onClick={openWhaleWatcherInNewTab}
             className="absolute top-2 right-2 z-20 bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-400 transition-colors"
