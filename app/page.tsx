@@ -486,8 +486,8 @@ export default function Page() {
       </div>
 
       <div className="relative z-10 flex h-screen">
-        {/* Main Content Area - Adjusted for extended whale watcher */}
-        <div className="w-2/3 flex flex-col">
+        {/* Main Content Area - Better space utilization */}
+        <div className="flex-1 flex flex-col mr-4">
           {/* Header - Compact */}
           <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b-2 border-green-500 p-4">
             <div className="flex items-center justify-between mb-4">
@@ -544,72 +544,117 @@ export default function Page() {
           <div className="flex-1 p-4 space-y-4 overflow-y-auto">
             {stats && (
               <>
-                {/* Overview Stats - Compact Grid */}
+                {/* Overview Stats - Better organized grid */}
                 <section>
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-4 h-4 bg-green-500 clip-path-diamond" />
                     <h2 className="text-lg font-bold tracking-wider text-green-400">OVERVIEW</h2>
                   </div>
-                  <div className="grid grid-cols-6 gap-2">
+                  <div className="grid grid-cols-8 gap-2">
                     <StatCard label="Trades" value={stats.totalTrades.toLocaleString()} />
                     <StatCard label="Win Rate" value={pct(stats.winRate)} />
                     <StatCard label="PnL" value={usd(stats.realizedPnl)} />
                     <StatCard label="Volume" value={usd(stats.volume)} />
-                    <StatCard label="Score" value={`${stats.confidenceScore || 0}%`} highlight={true} />
-                    <StatCard label="Streak" value={`${(stats.winStreaks?.current || 0) > 0 ? '+' : ''}${stats.winStreaks?.current || 0}`} />
-                  </div>
-                </section>
-
-                {/* Long/Short Analysis - Side by side, compact */}
-                <section>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-4 h-4 bg-green-500 clip-path-diamond" />
-                    <h2 className="text-lg font-bold tracking-wider text-green-400">LONG/SHORT ANALYSIS</h2>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <LoadoutCard side="LONG POSITIONS" data={stats.longs} color="green" />
-                    <LoadoutCard side="SHORT POSITIONS" data={stats.shorts} color="red" />
-                  </div>
-                </section>
-
-                {/* Time Analysis - Horizontal layout */}
-                <section>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-4 h-4 bg-green-500 clip-path-diamond" />
-                    <h2 className="text-lg font-bold tracking-wider text-green-400">TIME PATTERNS</h2>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    {/* Days of Week */}
-                    <TimeCard title="DAILY" type="days" data={stats.timeBreakdown.days} />
-                    
-                    {/* Sessions */}
-                    <TimeCard title="SESSIONS" type="sessions" data={stats.timeBreakdown.sessions} />
-                    
-                    {/* Hours - Simplified */}
-                    <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-3 backdrop-blur-sm">
-                      <h3 className="font-bold text-green-400 text-sm tracking-wider mb-2">HOURLY</h3>
-                      <div className="grid grid-cols-6 gap-1 max-h-20 overflow-y-auto">
-                        {Object.entries(stats.timeBreakdown?.hours || {})
-                          .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                          .slice(0, 12) // Show only 12 hours to fit
-                          .map(([hour, data]) => {
-                            const getColorClass = () => {
-                              if (data.trades < 3) return 'bg-gray-700/50';
-                              if (data.winRate >= 0.7) return 'bg-green-500';
-                              if (data.winRate >= 0.5) return 'bg-yellow-500';
-                              return 'bg-red-500';
-                            };
-
-                            return (
-                              <div key={hour} className={`${getColorClass()} rounded p-1 text-center`}>
-                                <div className="text-xs font-bold text-white">{hour.padStart(2, '0')}</div>
-                              </div>
-                            );
-                          })}
+                    <div className="col-span-2 bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-yellow-500/50 rounded p-2 backdrop-blur-sm">
+                      <div className="flex items-center gap-1 text-xs font-semibold text-green-400 mb-1 tracking-wide">
+                        <span>Score</span>
+                        <div className="group relative">
+                          <div className="w-4 h-4 bg-yellow-500/20 border border-yellow-500/50 rounded-full flex items-center justify-center cursor-help">
+                            <span className="text-yellow-400 text-xs font-bold">i</span>
+                          </div>
+                          <div className="invisible group-hover:visible absolute bottom-6 left-0 w-80 bg-gray-900 border border-yellow-500/50 rounded p-3 text-xs z-50 shadow-xl">
+                            <div className="font-bold text-yellow-400 mb-2">Confidence Score Calculation</div>
+                            <div className="text-gray-300 space-y-1">
+                              <div>• <span className="text-green-400">Win Rate</span>: 70%+ = Exceptional, 62%+ = Very Good, 56%+ = Good</div>
+                              <div>• <span className="text-blue-400">Profitability</span>: Return ratio vs volume traded</div>
+                              <div>• <span className="text-purple-400">Risk/Reward</span>: Average win vs average loss ratio</div>
+                              <div>• <span className="text-orange-400">Experience</span>: Number of trades and consistency</div>
+                              <div className="text-yellow-400 mt-2 font-semibold">Score: 10-95% (Higher = Better Trader)</div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
+                      <div className="text-xl font-bold text-yellow-400">{stats.confidenceScore || 0}%</div>
                     </div>
+                    <StatCard label="Streak" value={`${(stats.winStreaks?.current || 0) > 0 ? '+' : ''}${stats.winStreaks?.current || 0}`} />
+                    <StatCard label="Avg Trade" value={usd(stats.avgNotional)} />
                   </div>
                 </section>
+
+                {/* Two-column layout for better space usage */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Left Column */}
+                  <div className="space-y-4">
+                    {/* Long/Short Analysis */}
+                    <section>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-4 h-4 bg-green-500 clip-path-diamond" />
+                        <h2 className="text-lg font-bold tracking-wider text-green-400">LONG/SHORT ANALYSIS</h2>
+                      </div>
+                      <div className="space-y-3">
+                        <LoadoutCard side="LONG POSITIONS" data={stats.longs} color="green" />
+                        <LoadoutCard side="SHORT POSITIONS" data={stats.shorts} color="red" />
+                      </div>
+                    </section>
+
+                    {/* Additional Stats */}
+                    <section>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-4 h-4 bg-green-500 clip-path-diamond" />
+                        <h2 className="text-lg font-bold tracking-wider text-green-400">PERFORMANCE METRICS</h2>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <StatCard label="Avg Win" value={usd(stats.avgWin)} />
+                        <StatCard label="Avg Loss" value={usd(stats.avgLoss)} />
+                        <StatCard label="Total Fees" value={usd(stats.fees)} />
+                        <StatCard label="Most Traded" value={stats.mostTraded} />
+                      </div>
+                    </section>
+                  </div>
+
+                  {/* Right Column */}
+                  <div className="space-y-4">
+                    {/* Time Analysis */}
+                    <section>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-4 h-4 bg-green-500 clip-path-diamond" />
+                        <h2 className="text-lg font-bold tracking-wider text-green-400">TIME PATTERNS</h2>
+                      </div>
+                      <div className="space-y-3">
+                        <TimeCard title="DAILY" type="days" data={stats.timeBreakdown.days} />
+                        <TimeCard title="SESSIONS" type="sessions" data={stats.timeBreakdown.sessions} />
+                        
+                        {/* Hours - Simplified */}
+                        <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-3 backdrop-blur-sm">
+                          <h3 className="font-bold text-green-400 text-sm tracking-wider mb-2">HOURLY HEATMAP</h3>
+                          <div className="grid grid-cols-8 gap-1">
+                            {Object.entries(stats.timeBreakdown?.hours || {})
+                              .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                              .slice(0, 16) // Show more hours
+                              .map(([hour, data]) => {
+                                const getColorClass = () => {
+                                  if (data.trades < 3) return 'bg-gray-700/50';
+                                  if (data.winRate >= 0.7) return 'bg-green-500';
+                                  if (data.winRate >= 0.5) return 'bg-yellow-500';
+                                  return 'bg-red-500';
+                                };
+
+                                return (
+                                  <div 
+                                    key={hour} 
+                                    className={`${getColorClass()} rounded p-1 text-center cursor-help`}
+                                    title={`${hour}:00 - ${data.trades} trades, ${(data.winRate * 100).toFixed(0)}% win rate`}
+                                  >
+                                    <div className="text-xs font-bold text-white">{hour.padStart(2, '0')}</div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                </div>
 
                 {/* PnL Chart - Compact */}
                 <section>
@@ -669,8 +714,8 @@ export default function Page() {
           </div>
         </div>
 
-        {/* Whale Watcher Sidebar - Extended to fill space */}
-        <div className="w-1/3 border-l-2 border-green-500 relative">
+        {/* Whale Watcher Sidebar - Optimized width */}
+        <div className="w-96 border-l-2 border-green-500 relative flex-shrink-0">
           <button
             onClick={openWhaleWatcherInNewTab}
             className="absolute top-2 right-2 z-20 bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-400 transition-colors"
