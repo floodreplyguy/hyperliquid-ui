@@ -116,16 +116,355 @@ export default function Page() {
           <title>Whale Watcher</title>
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
-            body { margin: 0; background: #111827; }
+            body { margin: 0; background: #111827; font-family: system-ui, -apple-system, sans-serif; }
+            @keyframes pulse-glow {
+              0%, 100% { 
+                box-shadow: 0 0 25px rgba(59, 130, 246, 0.4), inset 0 0 15px rgba(59, 130, 246, 0.1);
+                transform: scale(1);
+              }
+              50% { 
+                box-shadow: 0 0 40px rgba(59, 130, 246, 0.8), inset 0 0 25px rgba(59, 130, 246, 0.3);
+                transform: scale(1.02);
+              }
+            }
+            @keyframes slide-in {
+              0% { 
+                transform: translateX(100%) rotateY(90deg) scale(0.8); 
+                opacity: 0; 
+                filter: blur(10px);
+              }
+              50% {
+                transform: translateX(20%) rotateY(45deg) scale(0.95);
+                opacity: 0.7;
+                filter: blur(2px);
+              }
+              100% { 
+                transform: translateX(0) rotateY(0deg) scale(1); 
+                opacity: 1; 
+                filter: blur(0px);
+              }
+            }
+            @keyframes glow-buy {
+              0%, 100% { 
+                box-shadow: 0 0 25px rgba(34, 197, 94, 0.4), inset 0 0 15px rgba(34, 197, 94, 0.1);
+                border-color: rgba(34, 197, 94, 0.6);
+                transform: scale(1);
+              }
+              25% { 
+                box-shadow: 0 0 45px rgba(34, 197, 94, 0.7), inset 0 0 25px rgba(34, 197, 94, 0.2);
+                border-color: rgba(34, 197, 94, 0.9);
+                transform: scale(1.03);
+              }
+            }
+            @keyframes glow-sell {
+              0%, 100% { 
+                box-shadow: 0 0 25px rgba(239, 68, 68, 0.4), inset 0 0 15px rgba(239, 68, 68, 0.1);
+                border-color: rgba(239, 68, 68, 0.6);
+                transform: scale(1);
+              }
+              25% { 
+                box-shadow: 0 0 45px rgba(239, 68, 68, 0.7), inset 0 0 25px rgba(239, 68, 68, 0.2);
+                border-color: rgba(239, 68, 68, 0.9);
+                transform: scale(1.03);
+              }
+            }
+            @keyframes float {
+              0%, 100% { transform: translateY(0px) scale(1); }
+              50% { transform: translateY(-8px) scale(1.02); }
+            }
+            @keyframes particle-float {
+              0% { 
+                transform: translateY(100vh) scale(0); 
+                opacity: 0; 
+              }
+              10% { 
+                opacity: 1; 
+                transform: translateY(90vh) scale(1);
+              }
+              50% {
+                transform: translateY(50vh) scale(1.1);
+              }
+              90% { 
+                opacity: 1; 
+                transform: translateY(10vh) scale(0.9);
+              }
+              100% { 
+                transform: translateY(-10px) scale(0); 
+                opacity: 0; 
+              }
+            }
+            .whale-glow {
+              animation: pulse-glow 4s ease-in-out infinite;
+              background: linear-gradient(-45deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));
+              transition: all 0.3s ease;
+            }
+            .trade-item {
+              animation: slide-in 0.6s ease-out;
+              transition: all 0.3s ease;
+            }
+            .buy-glow {
+              animation: glow-buy 4s ease-in-out infinite;
+              transition: all 0.3s ease;
+            }
+            .sell-glow {
+              animation: glow-sell 4s ease-in-out infinite;
+              transition: all 0.3s ease;
+            }
+            .whale-float {
+              animation: float 6s ease-in-out infinite;
+            }
+            .particle {
+              animation: particle-float linear infinite;
+            }
           </style>
         </head>
         <body>
-          <div id="whale-watcher-container">
-            <div style="color: white; padding: 20px; text-align: center;">
-              Whale Watcher (New Tab)<br>
-              <small>Close this tab to return to main app</small>
-            </div>
-          </div>
+          <div id="whale-watcher-root" style="width: 100%; height: 100vh;"></div>
+          <script>
+            // Standalone Whale Watcher Component
+            class WhaleWatcher {
+              constructor() {
+                this.trades = [];
+                this.connected = false;
+                this.threshold = 50000;
+                this.assetFilter = 'ALL';
+                this.ws = null;
+                this.init();
+              }
+
+              init() {
+                this.render();
+                this.connectWebSocket();
+              }
+
+              connectWebSocket() {
+                this.ws = new WebSocket('wss://api.hyperliquid.xyz/ws');
+
+                this.ws.onopen = () => {
+                  this.connected = true;
+                  this.updateConnectionStatus();
+                  this.ws.send(JSON.stringify({ method: 'subscribe', subscription: { type: 'allMids' } }));
+                  ['BTC', 'ETH', 'SOL', 'HYPE'].forEach(coin =>
+                    this.ws.send(JSON.stringify({ method: 'subscribe', subscription: { type: 'trades', coin } }))
+                  );
+                };
+
+                this.ws.onmessage = (e) => {
+                  try {
+                    const msg = JSON.parse(e.data);
+                    if (msg?.channel !== 'trades') return;
+
+                    const fresh = (msg.data || [])
+                      .filter(f => +f.sz * +f.px >= this.threshold)
+                      .map(f => ({
+                        symbol: f.coin,
+                        notional: +f.sz * +f.px,
+                        price: +f.px,
+                        dir: f.side === 'A' ? 'A' : 'B',
+                        wallet: f.users?.[0] ?? 'unknown',
+                        timestamp: f.time ?? Date.now(),
+                        receivedAt: Date.now(),
+                      }));
+
+                    if (fresh.length > 0) {
+                      this.trades = [...fresh, ...this.trades].slice(0, 50);
+                      this.updateTrades();
+                    }
+                  } catch (err) {
+                    console.error('WS parse error', err);
+                  }
+                };
+
+                this.ws.onclose = () => {
+                  this.connected = false;
+                  this.updateConnectionStatus();
+                };
+                this.ws.onerror = () => {
+                  this.connected = false;
+                  this.updateConnectionStatus();
+                };
+              }
+
+              render() {
+                const root = document.getElementById('whale-watcher-root');
+                root.innerHTML = \`
+                  <div style="width: 100%; height: 100vh; overflow: hidden; position: relative; background: linear-gradient(to bottom, #111827, #000000, #111827);">
+                    <!-- Animated Background -->
+                    <div style="position: absolute; inset: 0; overflow: hidden;">
+                      \${Array.from({length: 30}, (_, i) => \`
+                        <div class="particle" style="
+                          position: absolute;
+                          border-radius: 50%;
+                          width: \${Math.random() > 0.7 ? '8px' : '4px'};
+                          height: \${Math.random() > 0.7 ? '8px' : '4px'};
+                          background: radial-gradient(circle, \${['rgba(59, 130, 246, 0.8)', 'rgba(147, 51, 234, 0.8)', 'rgba(16, 185, 129, 0.8)', 'rgba(245, 101, 101, 0.8)'][Math.floor(Math.random() * 4)]}, transparent);
+                          left: \${Math.random() * 100}%;
+                          animation-delay: \${Math.random() * 15}s;
+                          animation-duration: \${10 + Math.random() * 8}s;
+                          filter: blur(0.5px);
+                          box-shadow: 0 0 10px currentColor;
+                        "></div>
+                      \`).join('')}
+                    </div>
+
+                    <!-- Header -->
+                    <div class="whale-glow" style="position: relative; padding: 16px; border-bottom: 1px solid rgba(107, 114, 128, 0.5); backdrop-filter: blur(4px); z-index: 10;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; margin-bottom: 12px;">
+                        <span style="font-size: 18px; font-weight: bold; letter-spacing: 0.1em; background: linear-gradient(to right, #60a5fa, #a855f7, #06b6d4); -webkit-background-clip: text; background-clip: text; color: transparent;">
+                          WHALE RADAR
+                        </span>
+                        <div id="connection-status" style="width: 12px; height: 12px; border-radius: 50%; position: relative; background: #ef4444;">
+                          <div style="position: absolute; inset: 0; border-radius: 50%; animation: pulse 2s ease-in-out infinite; background: #ef4444;"></div>
+                        </div>
+                      </div>
+
+                      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 12px; color: #d1d5db;">
+                        <span style="color: #60a5fa; font-weight: bold;">$\${(this.threshold/1000).toFixed(0)}K</span>
+                        <div style="flex: 1; position: relative;">
+                          <input
+                            type="range"
+                            min="50000"
+                            max="1000000"
+                            step="25000"
+                            value="\${this.threshold}"
+                            id="threshold-slider"
+                            style="width: 100%; height: 8px; background: rgba(107, 114, 128, 0.5); border-radius: 4px; cursor: pointer; accent-color: #3b82f6; transition: all 0.3s; backdrop-filter: blur(4px);"
+                          />
+                          <div style="position: absolute; top: 0; left: 0; height: 8px; background: linear-gradient(to right, #3b82f6, #a855f7); border-radius: 4px; pointer-events: none; width: \${((this.threshold - 50000) / (1000000 - 50000)) * 100}%;"></div>
+                        </div>
+                        <span style="color: #a855f7; font-weight: bold;">$1M</span>
+                      </div>
+
+                      <select
+                        id="asset-filter"
+                        style="width: 100%; background: rgba(31, 41, 55, 0.8); border: 1px solid rgba(107, 114, 128, 0.5); color: white; font-size: 12px; padding: 8px; border-radius: 4px; backdrop-filter: blur(4px);"
+                      >
+                        <option value="ALL">🌊 All Assets</option>
+                        <option value="BTC">₿ BTC</option>
+                        <option value="ETH">₿ ETH</option>
+                        <option value="SOL">₿ SOL</option>
+                        <option value="HYPE">₿ HYPE</option>
+                      </select>
+                    </div>
+
+                    <!-- Trades List -->
+                    <div style="flex: 1; overflow-y: auto; height: calc(100vh - 200px);">
+                      <div id="trades-container" style="padding: 8px; gap: 4px; display: flex; flex-direction: column;">
+                        <div style="display: flex; align-items: center; justify-content: center; height: 400px; color: #9ca3af; text-align: center; padding: 16px;">
+                          <div class="whale-float">
+                            <div style="font-size: 48px; margin-bottom: 12px;">🐋</div>
+                            <div style="font-size: 14px;">
+                              \${this.connected ? 'Scanning the depths...' : 'Connecting to the ocean...'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                \`;
+
+                // Add event listeners
+                document.getElementById('threshold-slider').addEventListener('input', (e) => {
+                  this.threshold = parseInt(e.target.value);
+                  this.render();
+                });
+
+                document.getElementById('asset-filter').addEventListener('change', (e) => {
+                  this.assetFilter = e.target.value;
+                  this.updateTrades();
+                });
+              }
+
+              updateConnectionStatus() {
+                const status = document.getElementById('connection-status');
+                if (status) {
+                  status.style.background = this.connected ? '#22c55e' : '#ef4444';
+                  status.firstElementChild.style.background = this.connected ? '#22c55e' : '#ef4444';
+                }
+              }
+
+              updateTrades() {
+                const container = document.getElementById('trades-container');
+                const filteredTrades = this.trades.filter(t => this.assetFilter === 'ALL' || t.symbol === this.assetFilter);
+                
+                if (filteredTrades.length === 0) {
+                  container.innerHTML = \`
+                    <div style="display: flex; align-items: center; justify-content: center; height: 400px; color: #9ca3af; text-align: center; padding: 16px;">
+                      <div class="whale-float">
+                        <div style="font-size: 48px; margin-bottom: 12px;">🐋</div>
+                        <div style="font-size: 14px;">
+                          \${this.connected ? 'Scanning the depths...' : 'Connecting to the ocean...'}
+                        </div>
+                      </div>
+                    </div>
+                  \`;
+                  return;
+                }
+
+                container.innerHTML = filteredTrades.map((t, i) => {
+                  const isBuy = t.dir === 'B';
+                  const isLarge = t.notional > 200000;
+                  const timeAgo = this.getTimeAgo(t.receivedAt);
+
+                  return \`
+                    <div class="trade-item \${isBuy ? (isLarge ? 'buy-glow' : '') : (isLarge ? 'sell-glow' : '')}" style="
+                      display: flex;
+                      align-items: center;
+                      padding: 12px;
+                      border-radius: 8px;
+                      position: relative;
+                      overflow: hidden;
+                      background: linear-gradient(to right, \${isBuy ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)'}, \${isBuy ? 'rgba(34, 197, 94, 0.25)' : 'rgba(239, 68, 68, 0.25)'});
+                      border-left: 4px solid \${isBuy ? '#22c55e' : '#ef4444'};
+                      margin-bottom: 4px;
+                      transition: all 0.3s ease;
+                    " onmouseover="this.style.transform='scale(1.02) translateY(-1px)'; this.style.filter='brightness(1.05)';" onmouseout="this.style.transform='scale(1)'; this.style.filter='brightness(1)';">
+                      
+                      <div style="flex: 1; position: relative; z-index: 10;">
+                        <div style="font-weight: bold; font-size: 18px; letter-spacing: 0.05em; color: \${isBuy ? '#22c55e' : '#ef4444'}; text-shadow: 0 0 10px currentColor;">
+                          \${t.symbol}
+                          \${isLarge ? '<span style="margin-left: 8px; font-size: 12px; background: linear-gradient(to right, #fbbf24, #f59e0b); color: black; padding: 2px 8px; border-radius: 12px; font-weight: 800;">🐋 WHALE</span>' : ''}
+                        </div>
+                        <div style="font-size: 12px; color: #d1d5db; line-height: 1.2; font-weight: 500;">
+                          $\${t.notional.toLocaleString()} @ $\${t.price.toLocaleString()}
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
+                          <div style="font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 4px; color: \${isBuy ? '#22c55e' : '#ef4444'};">
+                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: \${isBuy ? '#22c55e' : '#ef4444'};"></span>
+                            \${isBuy ? 'BUY' : 'SELL'}
+                          </div>
+                          <div style="font-size: 12px; color: #6b7280; font-weight: 500;">
+                            \${timeAgo}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onclick="navigator.clipboard.writeText('\${t.wallet}')"
+                        style="margin-left: 12px; background: linear-gradient(to right, rgba(107, 114, 128, 0.8), rgba(75, 85, 99, 0.8)); color: white; font-size: 12px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(107, 114, 128, 0.5); backdrop-filter: blur(4px); transition: all 0.2s ease; cursor: pointer;"
+                        onmouseover="this.style.background='linear-gradient(to right, #2563eb, #3b82f6)'; this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 15px rgba(59, 130, 246, 0.4)';"
+                        onmouseout="this.style.background='linear-gradient(to right, rgba(107, 114, 128, 0.8), rgba(75, 85, 99, 0.8))'; this.style.transform='scale(1)'; this.style.boxShadow='none';"
+                        title="Copy wallet address"
+                      >
+                        📋
+                      </button>
+                    </div>
+                  \`;
+                }).join('');
+              }
+
+              getTimeAgo(receivedAt) {
+                const seconds = Math.floor((Date.now() - receivedAt) / 1000);
+                if (seconds < 60) return \`\${seconds}s ago\`;
+                const minutes = Math.floor(seconds / 60);
+                if (minutes < 60) return \`\${minutes}m ago\`;
+                const hours = Math.floor(minutes / 60);
+                return \`\${hours}h ago\`;
+              }
+            }
+
+            // Initialize the whale watcher
+            new WhaleWatcher();
+          </script>
         </body>
         </html>
       `);
