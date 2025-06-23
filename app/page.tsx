@@ -589,7 +589,7 @@ export default function Page() {
                           <div className={`flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r ${stats.traderRank.gradient || 'from-gray-400 to-gray-600'} shadow-lg`}>
                             <span className="text-lg">{stats.traderRank.icon}</span>
                             <span className="text-sm font-bold text-white tracking-wider">
-                              {stats.traderRank.displayName || stats.traderRank.name}</span>
+                              {stats.traderRank.displayName || stats.traderRank.rank}</span>
                           </div>
                         )}
                       </div>
