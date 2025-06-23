@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -387,7 +386,7 @@ export default function Page() {
               updateTrades() {
                 const container = document.getElementById('trades-container');
                 const filteredTrades = this.trades.filter(t => this.assetFilter === 'ALL' || t.symbol === this.assetFilter);
-                
+
                 if (filteredTrades.length === 0) {
                   container.innerHTML = \`
                     <div style="display: flex; align-items: center; justify-content: center; height: 400px; color: #9ca3af; text-align: center; padding: 16px;">
@@ -420,7 +419,7 @@ export default function Page() {
                       margin-bottom: 4px;
                       transition: all 0.3s ease;
                     " onmouseover="this.style.transform='scale(1.02) translateY(-1px)'; this.style.filter='brightness(1.05)';" onmouseout="this.style.transform='scale(1)'; this.style.filter='brightness(1)';">
-                      
+
                       <div style="flex: 1; position: relative; z-index: 10;">
                         <div style="font-weight: bold; font-size: 18px; letter-spacing: 0.05em; color: \${isBuy ? '#22c55e' : '#ef4444'}; text-shadow: 0 0 10px currentColor;">
                           \${t.symbol}
@@ -559,8 +558,8 @@ export default function Page() {
                     <div className="col-span-2 bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-yellow-500/50 rounded p-2 backdrop-blur-sm">
                       <div className="flex items-center gap-1 text-xs font-semibold text-green-400 mb-1 tracking-wide">
                         <span>Score</span>
-                        <div className="group relative">
-                          <div className="w-4 h-4 bg-yellow-500/20 border border-yellow-500/50 rounded-full flex items-center justify-center cursor-help">
+                        <div className="group relative z-50">
+                          <div className="w-4 h-4 rounded-full bg-yellow-500/20 border border-yellow-500/50 flex items-center justify-center cursor-help">
                             <span className="text-yellow-400 text-xs font-bold">i</span>
                           </div>
                           <div className="invisible group-hover:visible fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-gray-900/98 border border-yellow-500/70 rounded-lg p-4 text-xs z-[99999] shadow-2xl backdrop-blur-lg">
@@ -646,7 +645,7 @@ export default function Page() {
                       <div className="space-y-3">
                         <TimeCard title="DAILY" type="days" data={stats.timeBreakdown.days} />
                         <TimeCard title="SESSIONS" type="sessions" data={stats.timeBreakdown.sessions} />
-                        
+
                         {/* Hours - Simplified */}
                         <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-3 backdrop-blur-sm">
                           <h3 className="font-bold text-green-400 text-sm tracking-wider mb-2">HOURLY HEATMAP</h3>
@@ -754,11 +753,11 @@ export default function Page() {
         .clip-path-diamond {
           clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
         }
-        
+
         .dvd-bounce {
           animation: dvd-bounce 15s linear infinite;
         }
-        
+
         @keyframes dvd-bounce {
           0% {
             left: 0%;
