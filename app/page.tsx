@@ -80,7 +80,6 @@ export default function Page() {
   const [stats, setStats] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [whaleWatcherExpanded, setWhaleWatcherExpanded] = useState(false);
 
   const fetchStats = async () => {
     if (!wallet.trim()) {
@@ -107,8 +106,35 @@ export default function Page() {
     }
   };
 
+  const openWhaleWatcherInNewTab = () => {
+    const whaleWatcherWindow = window.open('', '_blank', 'width=400,height=800,scrollbars=yes');
+    if (whaleWatcherWindow) {
+      whaleWatcherWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Whale Watcher</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            body { margin: 0; background: #111827; }
+          </style>
+        </head>
+        <body>
+          <div id="whale-watcher-container">
+            <div style="color: white; padding: 20px; text-align: center;">
+              Whale Watcher (New Tab)<br>
+              <small>Close this tab to return to main app</small>
+            </div>
+          </div>
+        </body>
+        </html>
+      `);
+      whaleWatcherWindow.document.close();
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white overflow-hidden">
       {/* Background Pattern */}
       <div className="fixed inset-0 opacity-10">
         <div className="absolute inset-0" style={{
@@ -121,227 +147,123 @@ export default function Page() {
       </div>
 
       <div className="relative z-10 flex h-screen">
-        {/* Main Content Area - 70% */}
-        <div className={`transition-all duration-300 ${whaleWatcherExpanded ? 'w-0 overflow-hidden' : 'w-[70%]'} flex flex-col`}>
-          {/* Header */}
-          <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b-2 border-green-500 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <div className="w-8 h-8 bg-green-500 clip-path-diamond flex items-center justify-center">
-                  <span className="text-black font-bold">⚡</span>
+        {/* Main Content Area - 75% */}
+        <div className="w-3/4 flex flex-col">
+          {/* Header - Compact */}
+          <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b-2 border-green-500 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-green-500 clip-path-diamond flex items-center justify-center">
+                  <span className="text-black font-bold text-sm">⚡</span>
                 </div>
-                <h1 className="text-3xl font-bold tracking-wider bg-gradient-to-r from-green-400 to-emerald-300 bg-clip-text text-transparent">
-                  TACTICAL TRADER ANALYSIS
+                <h1 className="text-2xl font-bold tracking-wider bg-gradient-to-r from-green-400 to-emerald-300 bg-clip-text text-transparent">
+                  TRADING ANALYTICS
                 </h1>
               </div>
               <div className="text-xs text-green-400 font-mono">
-                STATUS: OPERATIONAL
+                LIVE DATA
               </div>
             </div>
 
-            {/* Search Section */}
-            <div className="bg-gradient-to-r from-gray-800/60 to-gray-700/60 border border-green-500/30 rounded p-4 backdrop-blur-sm">
-              <div className="flex gap-4 items-end">
+            {/* Search Section - Compact */}
+            <div className="bg-gradient-to-r from-gray-800/60 to-gray-700/60 border border-green-500/30 rounded p-3 backdrop-blur-sm">
+              <div className="flex gap-3 items-end">
                 <div className="flex-1">
-                  <label className="block text-xs font-semibold text-green-400 mb-2 tracking-wide">
-                    TARGET WALLET ADDRESS
+                  <label className="block text-xs font-semibold text-green-400 mb-1 tracking-wide">
+                    WALLET ADDRESS
                   </label>
                   <input
                     value={wallet}
                     onChange={(e) => setWallet(e.target.value.trim())}
                     placeholder="0x... (Enter wallet to analyze)"
-                    className="w-full bg-gray-900/80 border border-gray-600 text-white px-4 py-3 rounded font-mono text-sm focus:border-green-500 focus:outline-none transition-all duration-300"
+                    className="w-full bg-gray-900/80 border border-gray-600 text-white px-3 py-2 rounded font-mono text-sm focus:border-green-500 focus:outline-none transition-all duration-300"
                   />
                 </div>
                 <button
                   onClick={fetchStats}
                   disabled={loading}
-                  className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-black px-8 py-3 rounded font-bold tracking-wide disabled:opacity-50 transition-all duration-300 transform hover:scale-105"
+                  className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-black px-6 py-2 rounded font-bold tracking-wide disabled:opacity-50 transition-all duration-300 transform hover:scale-105"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                      ANALYZING...
+                      ANALYZING
                     </div>
-                  ) : 'ENGAGE'}
+                  ) : 'ANALYZE'}
                 </button>
               </div>
             </div>
 
             {error && (
-              <div className="mt-4 bg-red-900/30 border border-red-500 text-red-300 px-4 py-3 rounded">
+              <div className="mt-3 bg-red-900/30 border border-red-500 text-red-300 px-3 py-2 rounded text-sm">
                 <span className="font-semibold">ERROR:</span> {error}
               </div>
             )}
           </div>
 
-          {/* Stats Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto">
+          {/* Stats Content - Optimized for single page */}
+          <div className="flex-1 p-4 space-y-4 overflow-y-auto">
             {stats && (
-              <div className="p-6 space-y-8">
-                {/* Mission Overview */}
+              <>
+                {/* Overview Stats - Compact Grid */}
                 <section>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-6 h-6 bg-green-500 clip-path-diamond" />
-                    <h2 className="text-2xl font-bold tracking-wider text-green-400">MISSION OVERVIEW</h2>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-4 h-4 bg-green-500 clip-path-diamond" />
+                    <h2 className="text-lg font-bold tracking-wider text-green-400">OVERVIEW</h2>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <TacticalStat label="Total Engagements" value={stats.totalTrades.toLocaleString()} />
-                    <TacticalStat label="Success Rate" value={pct(stats.winRate)} />
-                    <TacticalStat label="Avg Victory" value={usd(stats.avgWin)} />
-                    <TacticalStat label="Avg Defeat" value={usd(stats.avgLoss)} />
-                    <TacticalStat label="Net Operations" value={usd(stats.realizedPnl)} />
-                    <TacticalStat label="Total Volume" value={usd(stats.volume)} />
-                    <TacticalStat label="Mission Costs" value={usd(stats.fees)} />
-                    <TacticalStat label="Avg Payload" value={usd(stats.avgNotional)} />
-                    <TacticalStat label="Primary Asset" value={stats.mostTraded} />
-                    
-                    {/* Confidence Score */}
-                    <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-4 backdrop-blur-sm">
-                      <div className="text-xs font-semibold text-green-400 mb-2 tracking-wide">TACTICAL CONFIDENCE</div>
-                      <div className={`text-2xl font-bold mb-1 ${
-                        (stats.confidenceScore || 0) >= 70 ? 'text-green-400' : 
-                        (stats.confidenceScore || 0) >= 50 ? 'text-yellow-400' : 'text-red-400'
-                      }`}>
-                        {(stats.confidenceScore || 0)}%
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {(stats.confidenceScore || 0) >= 70 ? 'ELITE OPERATIVE' :
-                         (stats.confidenceScore || 0) >= 50 ? 'CAPABLE SOLDIER' : 'NEEDS TRAINING'}
-                      </div>
-                    </div>
-
-                    {/* Position Tendency */}
-                    <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-4 backdrop-blur-sm">
-                      <div className="text-xs font-semibold text-green-400 mb-2 tracking-wide">TACTICAL PREFERENCE</div>
-                      <div className={`text-sm font-bold mb-1 ${
-                        stats.positionTendency === 'Long Bias' ? 'text-green-400' : 
-                        stats.positionTendency === 'Short Bias' ? 'text-red-400' : 'text-yellow-400'
-                      }`}>
-                        {stats.positionTendency}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {stats.recentLongs}L / {stats.recentShorts}S
-                      </div>
-                    </div>
-
-                    {/* Win Streak */}
-                    <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-4 backdrop-blur-sm">
-                      <div className="text-xs font-semibold text-green-400 mb-2 tracking-wide">CURRENT STREAK</div>
-                      <div className={`text-sm font-bold mb-1 ${
-                        (stats.winStreaks?.current || 0) > 0 ? 'text-green-400' : 
-                        (stats.winStreaks?.current || 0) < 0 ? 'text-red-400' : 'text-gray-400'
-                      }`}>
-                        {(stats.winStreaks?.current || 0) > 0 ? `+${stats.winStreaks?.current || 0}` : (stats.winStreaks?.current || 0)}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {(stats.winStreaks?.current || 0) > 0 ? 'ON FIRE' : 
-                         (stats.winStreaks?.current || 0) < 0 ? 'NEED BACKUP' : 'NEUTRAL'}
-                      </div>
-                    </div>
+                  <div className="grid grid-cols-6 gap-2">
+                    <StatCard label="Trades" value={stats.totalTrades.toLocaleString()} />
+                    <StatCard label="Win Rate" value={pct(stats.winRate)} />
+                    <StatCard label="PnL" value={usd(stats.realizedPnl)} />
+                    <StatCard label="Volume" value={usd(stats.volume)} />
+                    <StatCard label="Score" value={`${stats.confidenceScore || 0}%`} highlight={true} />
+                    <StatCard label="Streak" value={`${(stats.winStreaks?.current || 0) > 0 ? '+' : ''}${stats.winStreaks?.current || 0}`} />
                   </div>
                 </section>
 
-                {/* Loadout Analysis */}
-                <div className="grid grid-cols-2 gap-6">
-                  <LoadoutCard side="LONG OPERATIONS" data={stats.longs} color="green" />
-                  <LoadoutCard side="SHORT OPERATIONS" data={stats.shorts} color="red" />
-                </div>
-
-                {/* Time-Based Intel */}
+                {/* Long/Short Analysis - Side by side, compact */}
                 <section>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-6 h-6 bg-green-500 clip-path-diamond" />
-                    <h2 className="text-2xl font-bold tracking-wider text-green-400">TEMPORAL INTELLIGENCE</h2>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-4 h-4 bg-green-500 clip-path-diamond" />
+                    <h2 className="text-lg font-bold tracking-wider text-green-400">LONG/SHORT ANALYSIS</h2>
                   </div>
-                  <div className="grid grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <LoadoutCard side="LONG POSITIONS" data={stats.longs} color="green" />
+                    <LoadoutCard side="SHORT POSITIONS" data={stats.shorts} color="red" />
+                  </div>
+                </section>
+
+                {/* Time Analysis - Horizontal layout */}
+                <section>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-4 h-4 bg-green-500 clip-path-diamond" />
+                    <h2 className="text-lg font-bold tracking-wider text-green-400">TIME PATTERNS</h2>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
                     {/* Days of Week */}
-                    <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-4 backdrop-blur-sm">
-                      <h3 className="font-bold text-green-400 text-sm tracking-wider mb-4">WEEKLY OPERATIONS</h3>
-                      <div className="grid grid-cols-7 gap-1">
-                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => {
-                          const fullDay = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][i];
-                          const data = stats.timeBreakdown.days[fullDay] || { trades: 0, winRate: 0, avgPnl: 0 };
-                          const getColor = () => {
-                            if (data.trades < 3) return 'bg-gray-700/60';
-                            if (data.winRate >= 0.7 && data.avgPnl > 0) return 'bg-green-500';
-                            if (data.winRate >= 0.6 && data.avgPnl > 0) return 'bg-green-400';
-                            if (data.winRate >= 0.5) return 'bg-yellow-500';
-                            if (data.winRate >= 0.4) return 'bg-orange-500';
-                            return 'bg-red-500';
-                          };
-
-                          return (
-                            <div key={day} className="text-center">
-                              <div className="text-xs text-gray-400 mb-1 font-bold">{day}</div>
-                              <div 
-                                className={`${getColor()} rounded h-12 flex flex-col justify-center items-center border border-gray-600/30 transition-all hover:scale-105 cursor-pointer`}
-                                title={`${fullDay}: ${data.trades} trades, ${(data.winRate * 100).toFixed(0)}% win rate`}
-                              >
-                                <div className="text-xs font-bold text-white">
-                                  {data.trades > 0 ? `${(data.winRate * 100).toFixed(0)}%` : '-'}
-                                </div>
-                                <div className="text-xs text-white/80">
-                                  {data.trades > 0 ? data.trades : '-'}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
+                    <TimeCard title="DAILY" type="days" data={stats.timeBreakdown.days} />
+                    
                     {/* Sessions */}
-                    <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-4 backdrop-blur-sm">
-                      <h3 className="font-bold text-green-400 text-sm tracking-wider mb-4">SESSION INTEL</h3>
-                      <div className="space-y-3">
-                        {['Asia', 'Europe', 'US'].map((session) => {
-                          const data = stats.timeBreakdown.sessions[session] || { trades: 0, winRate: 0, avgPnl: 0 };
-                          const getColor = () => {
-                            if (data.trades < 5) return 'bg-gray-700/60';
-                            if (data.winRate >= 0.7 && data.avgPnl > 0) return 'bg-green-500';
-                            if (data.winRate >= 0.6 && data.avgPnl > 0) return 'bg-green-400';
-                            if (data.winRate >= 0.5) return 'bg-yellow-500';
-                            if (data.winRate >= 0.4) return 'bg-orange-500';
-                            return 'bg-red-500';
-                          };
-
-                          return (
-                            <div key={session} className={`${getColor()} rounded p-3 border border-gray-600/30`}>
-                              <div className="flex justify-between items-center">
-                                <div className="font-bold text-white">{session}</div>
-                                <div className="text-sm text-white/80">
-                                  {data.trades > 0 ? `${(data.winRate * 100).toFixed(0)}%` : '-'}
-                                </div>
-                              </div>
-                              <div className="text-xs text-white/70 mt-1">
-                                {data.trades > 0 ? `${data.trades} ops` : 'No data'}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Hours */}
-                    <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-4 backdrop-blur-sm">
-                      <h3 className="font-bold text-green-400 text-sm tracking-wider mb-4">HOURLY PATTERNS</h3>
-                      <div className="grid grid-cols-4 gap-1 max-h-40 overflow-y-auto">
+                    <TimeCard title="SESSIONS" type="sessions" data={stats.timeBreakdown.sessions} />
+                    
+                    {/* Hours - Simplified */}
+                    <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-3 backdrop-blur-sm">
+                      <h3 className="font-bold text-green-400 text-sm tracking-wider mb-2">HOURLY</h3>
+                      <div className="grid grid-cols-6 gap-1 max-h-20 overflow-y-auto">
                         {Object.entries(stats.timeBreakdown?.hours || {})
                           .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                          .slice(0, 12) // Show only 12 hours to fit
                           .map(([hour, data]) => {
                             const getColorClass = () => {
-                              if (data.trades < 3) return 'bg-gray-700/50 border-gray-600';
-                              if (data.winRate >= 0.7 && data.avgPnl > 0) return 'bg-green-600/80 border-green-500';
-                              if (data.winRate >= 0.6 && data.avgPnl > 0) return 'bg-green-500/60 border-green-400';
-                              if (data.winRate >= 0.5) return 'bg-yellow-600/60 border-yellow-500';
-                              return 'bg-red-600/80 border-red-500';
+                              if (data.trades < 3) return 'bg-gray-700/50';
+                              if (data.winRate >= 0.7) return 'bg-green-500';
+                              if (data.winRate >= 0.5) return 'bg-yellow-500';
+                              return 'bg-red-500';
                             };
 
                             return (
-                              <div key={hour} className={`${getColorClass()} border rounded p-1 text-center`}>
-                                <div className="text-xs font-bold text-white">{hour.padStart(2, '0')}:00</div>
-                                <div className="text-xs text-white/80">{data.trades}</div>
+                              <div key={hour} className={`${getColorClass()} rounded p-1 text-center`}>
+                                <div className="text-xs font-bold text-white">{hour.padStart(2, '0')}</div>
                               </div>
                             );
                           })}
@@ -350,15 +272,15 @@ export default function Page() {
                   </div>
                 </section>
 
-                {/* PnL Chart */}
+                {/* PnL Chart - Compact */}
                 <section>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-6 h-6 bg-green-500 clip-path-diamond" />
-                    <h2 className="text-2xl font-bold tracking-wider text-green-400">MISSION PROGRESS</h2>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-4 h-4 bg-green-500 clip-path-diamond" />
+                    <h2 className="text-lg font-bold tracking-wider text-green-400">PERFORMANCE CHART</h2>
                   </div>
-                  <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-6 backdrop-blur-sm">
+                  <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-4 backdrop-blur-sm h-48">
                     <Line
-                      height={300}
+                      height={180}
                       data={{
                         labels: stats.pnlChart.map((_, i) => i),
                         datasets: [
@@ -382,7 +304,8 @@ export default function Page() {
                           y: {
                             ticks: {
                               callback: (v) => usd(Number(v)),
-                              color: '#22c55e'
+                              color: '#22c55e',
+                              font: { size: 10 }
                             },
                             grid: { color: 'rgba(34,197,94,0.1)' }
                           },
@@ -391,28 +314,29 @@ export default function Page() {
                     />
                   </div>
                 </section>
-              </div>
+              </>
             )}
 
             {!stats && !loading && (
               <div className="flex items-center justify-center h-full text-gray-500">
                 <div className="text-center">
-                  <div className="text-6xl mb-4">🎯</div>
-                  <div className="text-xl font-bold">Ready for Mission</div>
-                  <div>Enter a wallet address to begin tactical analysis</div>
+                  <div className="text-4xl mb-3">📊</div>
+                  <div className="text-lg font-bold">Ready to Analyze</div>
+                  <div className="text-sm">Enter a wallet address to begin analysis</div>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Whale Watcher Sidebar - 30% */}
-        <div className={`transition-all duration-300 ${whaleWatcherExpanded ? 'w-full' : 'w-[30%]'} border-l-2 border-green-500 relative`}>
+        {/* Whale Watcher Sidebar - 25% */}
+        <div className="w-1/4 border-l-2 border-green-500 relative">
           <button
-            onClick={() => setWhaleWatcherExpanded(!whaleWatcherExpanded)}
-            className="absolute top-4 left-4 z-20 bg-green-500 text-black px-3 py-1 rounded font-bold text-xs hover:bg-green-400 transition-colors"
+            onClick={openWhaleWatcherInNewTab}
+            className="absolute top-2 right-2 z-20 bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-400 transition-colors"
+            title="Open in new tab"
           >
-            {whaleWatcherExpanded ? '◀ MINIMIZE' : '▶ EXPAND'}
+            ↗
           </button>
           <WhaleWatcher />
         </div>
@@ -427,11 +351,11 @@ export default function Page() {
   );
 }
 
-function TacticalStat({ label, value }: { label: string; value: string | number }) {
+function StatCard({ label, value, highlight = false }: { label: string; value: string | number; highlight?: boolean }) {
   return (
-    <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-4 backdrop-blur-sm">
-      <div className="text-xs font-semibold text-green-400 mb-2 tracking-wide">{label}</div>
-      <div className="text-lg font-bold text-white break-all">{value}</div>
+    <div className={`bg-gradient-to-br from-gray-800/80 to-gray-700/60 border ${highlight ? 'border-yellow-500/50' : 'border-green-500/30'} rounded p-2 backdrop-blur-sm`}>
+      <div className="text-xs font-semibold text-green-400 mb-1 tracking-wide">{label}</div>
+      <div className={`text-sm font-bold ${highlight ? 'text-yellow-400' : 'text-white'} break-all`}>{value}</div>
     </div>
   );
 }
@@ -453,35 +377,82 @@ function LoadoutCard({ side, data, color }: { side: string; data: TradeStats; co
   const colors = colorClasses[color];
 
   return (
-    <div className={`bg-gradient-to-br from-gray-800/80 to-gray-700/60 border ${colors.border} rounded p-6 backdrop-blur-sm`}>
-      <h3 className={`font-bold text-lg mb-4 ${colors.title} tracking-wider`}>{side}</h3>
-      <div className="grid grid-cols-2 gap-4 text-sm">
+    <div className={`bg-gradient-to-br from-gray-800/80 to-gray-700/60 border ${colors.border} rounded p-4 backdrop-blur-sm`}>
+      <h3 className={`font-bold text-sm mb-3 ${colors.title} tracking-wider`}>{side}</h3>
+      <div className="grid grid-cols-2 gap-2 text-xs">
         <div>
-          <div className="text-xs text-gray-400 mb-1">ENGAGEMENTS</div>
-          <div className="text-lg font-bold text-white">{data.trades}</div>
+          <div className="text-gray-400 mb-1">Trades</div>
+          <div className="text-sm font-bold text-white">{data.trades}</div>
         </div>
         <div>
-          <div className="text-xs text-gray-400 mb-1">SUCCESS RATE</div>
-          <div className={`text-lg font-bold ${colors.accent}`}>{pct(data.winRate)}</div>
+          <div className="text-gray-400 mb-1">Win Rate</div>
+          <div className={`text-sm font-bold ${colors.accent}`}>{pct(data.winRate)}</div>
         </div>
         <div>
-          <div className="text-xs text-gray-400 mb-1">AVG VICTORY</div>
-          <div className="text-sm font-bold text-white">{usd(data.avgWin)}</div>
+          <div className="text-gray-400 mb-1">Avg Win</div>
+          <div className="text-xs font-bold text-white">{usd(data.avgWin)}</div>
         </div>
         <div>
-          <div className="text-xs text-gray-400 mb-1">AVG DEFEAT</div>
-          <div className="text-sm font-bold text-white">{usd(data.avgLoss)}</div>
-        </div>
-        <div>
-          <div className="text-xs text-gray-400 mb-1">NET RESULT</div>
-          <div className={`text-sm font-bold ${data.totalPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          <div className="text-gray-400 mb-1">Net PnL</div>
+          <div className={`text-xs font-bold ${data.totalPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
             {usd(data.totalPnl)}
           </div>
         </div>
-        <div>
-          <div className="text-xs text-gray-400 mb-1">VOLUME</div>
-          <div className="text-sm font-bold text-white">{usd(data.volume)}</div>
-        </div>
+      </div>
+    </div>
+  );
+}
+
+function TimeCard({ title, type, data }: { title: string; type: string; data: Record<string, any> }) {
+  const getItems = () => {
+    if (type === 'days') {
+      return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
+        const fullDay = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(day)];
+        return { label: day, data: data[fullDay] || { trades: 0, winRate: 0 } };
+      });
+    } else {
+      return Object.entries(data).map(([key, value]) => ({
+        label: key,
+        data: value as { trades: number; winRate: number }
+      }));
+    }
+  };
+
+  const getColor = (itemData: { trades: number; winRate: number }) => {
+    if (itemData.trades < 3) return 'bg-gray-700/60';
+    if (itemData.winRate >= 0.7) return 'bg-green-500';
+    if (itemData.winRate >= 0.5) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  return (
+    <div className="bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-green-500/30 rounded p-3 backdrop-blur-sm">
+      <h3 className="font-bold text-green-400 text-sm tracking-wider mb-2">{title}</h3>
+      <div className={type === 'days' ? 'grid grid-cols-7 gap-1' : 'space-y-2'}>
+        {getItems().map((item, i) => (
+          <div key={i} className={type === 'days' ? 'text-center' : ''}>
+            {type === 'days' ? (
+              <>
+                <div className="text-xs text-gray-400 mb-1 font-bold">{item.label}</div>
+                <div 
+                  className={`${getColor(item.data)} rounded h-8 flex items-center justify-center text-xs font-bold text-white`}
+                  title={`${item.label}: ${item.data.trades} trades, ${(item.data.winRate * 100).toFixed(0)}% win rate`}
+                >
+                  {item.data.trades > 0 ? `${(item.data.winRate * 100).toFixed(0)}%` : '-'}
+                </div>
+              </>
+            ) : (
+              <div className={`${getColor(item.data)} rounded p-2`}>
+                <div className="flex justify-between items-center">
+                  <div className="font-bold text-white text-xs">{item.label}</div>
+                  <div className="text-xs text-white/80">
+                    {item.data.trades > 0 ? `${(item.data.winRate * 100).toFixed(0)}%` : '-'}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
