@@ -562,9 +562,9 @@ export default function Page() {
                           <div className="w-4 h-4 bg-yellow-500/20 border border-yellow-500/50 rounded-full flex items-center justify-center cursor-help">
                             <span className="text-yellow-400 text-xs font-bold">i</span>
                           </div>
-                          <div className="invisible group-hover:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 bg-gray-900/95 border border-yellow-500/50 rounded p-3 text-xs z-[9999] shadow-2xl backdrop-blur-sm">
-                            {/* Tooltip arrow */}
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-yellow-500/50"></div>
+                          <div className="invisible group-hover:visible fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-gray-900/98 border border-yellow-500/70 rounded-lg p-4 text-xs z-[99999] shadow-2xl backdrop-blur-lg">
+                            {/* Close button */}
+                            <div className="absolute top-2 right-2 w-4 h-4 text-yellow-400 cursor-pointer hover:text-yellow-200">×</div>
                             <div className="font-bold text-yellow-400 mb-2">Confidence Score Calculation</div>
                             <div className="text-gray-300 space-y-1">
                               <div>• <span className="text-green-400">Win Rate</span>: 70%+ = Exceptional, 62%+ = Very Good, 56%+ = Good</div>
