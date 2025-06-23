@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
 interface WhaleTrade {
   symbol: string;
@@ -10,21 +9,7 @@ interface WhaleTrade {
   dir: 'A' | 'B';
   wallet: string;
   timestamp: number;
-}
-
-interface Blob {
-  id: number;
-  x: number;
-  y: number;
-  radius: number;
-  targetRadius: number;
-  vx: number;
-  vy: number;
-  color: string;
-  intensity: number;
-  life: number;
-  symbol: string;
-  notional: number;
+  receivedAt: number; // When we received this trade locally
 }
 
 export default function WhaleWatcher() {
@@ -32,211 +17,6 @@ export default function WhaleWatcher() {
   const [connected, setConnected] = useState(false);
   const [threshold, setThreshold] = useState(50000);
   const [assetFilter, setAssetFilter] = useState('ALL');
-  const [intensity, setIntensity] = useState<number>(1);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number | undefined>();
-
-  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
-
-  const blobsRef = useRef<Blob[]>([]);
-  const nextBlobId = useRef(0);
-
-  // Initialize audio context
-  const initAudio = () => {
-    if (!audioContext) {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      setAudioContext(ctx);
-      setSoundEnabled(true);
-    }
-  };
-
-  // Play sound effect for trades
-  const playTradeSound = (notional: number, isBuy: boolean) => {
-    if (!audioContext || !soundEnabled) return;
-
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    // Frequency based on trade size
-    const baseFreq = isBuy ? 440 : 330; // A4 for buy, E4 for sell
-    const freqMultiplier = Math.min(Math.log(notional / 50000) / Math.log(10), 2);
-    oscillator.frequency.setValueAtTime(baseFreq * (1 + freqMultiplier * 0.5), audioContext.currentTime);
-
-    // Volume based on trade size
-    const volume = Math.min(notional / 500000, 0.3);
-    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-    gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.1);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
-
-    oscillator.type = 'sine';
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + 0.8);
-  };
-
-  // Create blob for new trade
-  const createBlob = (trade: WhaleTrade) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const isBuy = trade.dir === 'B';
-    const sizeMultiplier = Math.log(trade.notional / threshold) / Math.log(10);
-    const radius = Math.max(20, Math.min(80, 30 + sizeMultiplier * 20));
-
-    const blob: Blob = {
-      id: nextBlobId.current++,
-      x: Math.random() * (canvas.width - radius * 2) + radius,
-      y: Math.random() * (canvas.height - radius * 2) + radius,
-      radius: 5,
-      targetRadius: radius,
-      vx: (Math.random() - 0.5) * 2,
-      vy: (Math.random() - 0.5) * 2,
-      color: isBuy ? '#00ff88' : '#ff4444',
-      intensity: Math.min(trade.notional / 100000, 3),
-      life: 1.0,
-      symbol: trade.symbol,
-      notional: trade.notional
-    };
-
-    blobsRef.current.push(blob);
-    playTradeSound(trade.notional, isBuy);
-  };
-
-  // Animation loop
-  const animate = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-
-    // Clear canvas with subtle trail effect
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Update and draw blobs
-    blobsRef.current = blobsRef.current.filter(blob => {
-      // Update blob physics
-      blob.x += blob.vx * intensity;
-      blob.y += blob.vy * intensity;
-
-      // Smooth radius growth
-      blob.radius += (blob.targetRadius - blob.radius) * 0.1;
-
-      // Bounce off walls with damping
-      if (blob.x - blob.radius <= 0 || blob.x + blob.radius >= canvas.width) {
-        blob.vx *= -0.8;
-        blob.x = Math.max(blob.radius, Math.min(canvas.width - blob.radius, blob.x));
-      }
-      if (blob.y - blob.radius <= 0 || blob.y + blob.radius >= canvas.height) {
-        blob.vy *= -0.8;
-        blob.y = Math.max(blob.radius, Math.min(canvas.height - blob.radius, blob.y));
-      }
-
-      // Gravity and friction
-      blob.vy += 0.1 * intensity;
-      blob.vx *= 0.995;
-      blob.vy *= 0.995;
-
-      // Life decay
-      blob.life -= 0.002;
-
-      // Blob interactions - organic merging and repulsion
-      blobsRef.current.forEach(otherBlob => {
-        if (blob.id !== otherBlob.id) {
-          const dx = otherBlob.x - blob.x;
-          const dy = otherBlob.y - blob.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          const minDistance = blob.radius + otherBlob.radius;
-
-          if (distance < minDistance && distance > 0) {
-            // Repulsion force
-            const force = (minDistance - distance) / distance * 0.1;
-            blob.vx -= dx * force;
-            blob.vy -= dy * force;
-          }
-
-          // Attraction at medium distance for organic flow
-          if (distance < minDistance * 2 && distance > minDistance) {
-            const force = 0.01;
-            blob.vx += dx * force;
-            blob.vy += dy * force;
-          }
-        }
-      });
-
-      // Draw blob with glow effect
-      const alpha = Math.max(0, blob.life);
-      
-      // Outer glow
-      const gradient = ctx.createRadialGradient(
-        blob.x, blob.y, 0,
-        blob.x, blob.y, blob.radius * 2
-      );
-      gradient.addColorStop(0, blob.color + Math.floor(alpha * 100).toString(16).padStart(2, '0'));
-      gradient.addColorStop(0.5, blob.color + '20');
-      gradient.addColorStop(1, 'transparent');
-
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(blob.x, blob.y, blob.radius * 2, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Core blob
-      ctx.fillStyle = blob.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
-      ctx.beginPath();
-      ctx.arc(blob.x, blob.y, blob.radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Pulsing effect for intensity
-      const pulseRadius = blob.radius + Math.sin(Date.now() * 0.01 + blob.id) * blob.intensity * 5;
-      ctx.strokeStyle = blob.color + '40';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(blob.x, blob.y, pulseRadius, 0, Math.PI * 2);
-      ctx.stroke();
-
-      return blob.life > 0;
-    });
-
-    // Add ambient particles
-    if (Math.random() < 0.02) {
-      const ambientBlob: Blob = {
-        id: nextBlobId.current++,
-        x: Math.random() * canvas.width,
-        y: canvas.height + 20,
-        radius: Math.random() * 5 + 2,
-        targetRadius: Math.random() * 5 + 2,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: -Math.random() * 2 - 1,
-        color: '#444488',
-        intensity: 0.5,
-        life: 0.8,
-        symbol: '',
-        notional: 0
-      };
-      blobsRef.current.push(ambientBlob);
-    }
-
-    animationRef.current = requestAnimationFrame(animate);
-  };
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.width = 380;
-      canvas.height = window.innerHeight;
-      animate();
-    }
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [intensity]);
-
   useEffect(() => {
     const ws = new WebSocket('wss://api.hyperliquid.xyz/ws');
 
@@ -262,14 +42,22 @@ export default function WhaleWatcher() {
             dir: f.side === 'A' ? 'A' : 'B',
             wallet: f.users?.[0] ?? 'unknown',
             timestamp: f.time ?? Date.now(),
+            receivedAt: Date.now(),
           })) as WhaleTrade[];
 
         if (fresh.length > 0) {
-          setTrades(prev => [...fresh, ...prev].slice(0, 50));
-          fresh.forEach(trade => {
-            if (assetFilter === 'ALL' || trade.symbol === assetFilter) {
-              createBlob(trade);
-            }
+          setTrades(prev => {
+            const newTrades = [...fresh, ...prev].slice(0, 50);
+            // Trigger slide-down animation for existing trades
+            setTimeout(() => {
+              const tradeElements = document.querySelectorAll('.trade-item');
+              tradeElements.forEach((el, index) => {
+                if (index >= fresh.length) {
+                  el.classList.add('slide-down');
+                }
+              });
+            }, 50);
+            return newTrades;
           });
         }
       } catch (err) {
@@ -280,93 +68,394 @@ export default function WhaleWatcher() {
     ws.onclose = () => setConnected(false);
     ws.onerror = () => setConnected(false);
     return () => ws.close();
-  }, [threshold, assetFilter]);
+  }, [threshold]);
 
   const usd = (n: number) => `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  
+  const getTimeAgo = (receivedAt: number) => {
+    const seconds = Math.floor((Date.now() - receivedAt) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  };
 
   return (
-    <div className="fixed top-0 right-0 w-[380px] h-screen bg-black text-white overflow-hidden">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 bg-black bg-opacity-80 border-b border-gray-700 p-4 z-10">
-        <div className="flex justify-between items-center text-sm font-semibold mb-3">
-          <span className="text-lg font-bold tracking-wider">WHALE LAVA</span>
-          <div className={`w-3 h-3 rounded-full transition-all duration-500 ${
-            connected ? 'bg-green-400 animate-pulse' : 'bg-red-500'
-          }`} />
+    <div className="fixed top-0 right-0 w-[380px] h-screen overflow-hidden relative">
+      {/* Animated Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-black to-gray-900">
+        {/* Floating Particles */}
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(30)].map((_, i) => (
+            <div
+              key={i}
+              className={`absolute rounded-full particle ${
+                Math.random() > 0.7 ? 'w-2 h-2' : 'w-1 h-1'
+              }`}
+              style={{
+                background: `radial-gradient(circle, ${
+                  ['rgba(59, 130, 246, 0.8)', 'rgba(147, 51, 234, 0.8)', 'rgba(16, 185, 129, 0.8)', 'rgba(245, 101, 101, 0.8)'][Math.floor(Math.random() * 4)]
+                }, transparent)`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 15}s`,
+                animationDuration: `${10 + Math.random() * 8}s`,
+                filter: 'blur(0.5px)',
+                boxShadow: '0 0 10px currentColor'
+              }}
+            />
+          ))}
         </div>
-
-        <div className="flex items-center gap-2 text-xs mb-3 text-gray-300">
-          <span>$50K</span>
-          <input
-            type="range"
-            min={50_000}
-            max={1_000_000}
-            step={25_000}
-            value={threshold}
-            onChange={e => setThreshold(+e.target.value)}
-            className="flex-1 h-1 bg-gray-600 rounded cursor-pointer accent-white"
-          />
-          <span>$1M</span>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs mb-3 text-gray-300">
-          <span>Calm</span>
-          <input
-            type="range"
-            min={0.1}
-            max={3}
-            step={0.1}
-            value={intensity}
-            onChange={e => setIntensity(+e.target.value)}
-            className="flex-1 h-1 bg-gray-600 rounded cursor-pointer accent-white"
-          />
-          <span>Wild</span>
-        </div>
-
-        <div className="flex gap-2 mb-3">
-          <select
-            value={assetFilter}
-            onChange={e => setAssetFilter(e.target.value)}
-            className="flex-1 bg-gray-800 border border-gray-600 text-white text-xs p-2 rounded focus:border-gray-400 focus:outline-none"
-          >
-            <option value="ALL">All Assets</option>
-            {['BTC', 'ETH', 'SOL', 'HYPE'].map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-          <button
-            onClick={initAudio}
-            className={`px-3 py-2 text-xs rounded border transition-all ${
-              soundEnabled 
-                ? 'bg-green-600 border-green-400 text-white' 
-                : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            🔊
-          </button>
-        </div>
+        
+        {/* Dynamic Wave Background */}
+        <div className="absolute inset-0 wave-bg opacity-10" />
       </div>
 
-      {/* Lava Lamp Canvas */}
-      <canvas
-        ref={canvasRef}
-        className="absolute top-0 left-0 w-full h-full"
-        style={{ background: 'radial-gradient(circle at center, #000011 0%, #000000 100%)' }}
-      />
+      <style jsx>{`
+        @keyframes pulse-glow {
+          0%, 100% { 
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.4), inset 0 0 15px rgba(59, 130, 246, 0.1);
+            transform: scale(1);
+          }
+          50% { 
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.8), inset 0 0 25px rgba(59, 130, 246, 0.3);
+            transform: scale(1.02);
+          }
+        }
+        
+        @keyframes slide-in {
+          0% { 
+            transform: translateX(100%) rotateY(90deg) scale(0.8); 
+            opacity: 0; 
+            filter: blur(10px);
+          }
+          50% {
+            transform: translateX(20%) rotateY(45deg) scale(0.95);
+            opacity: 0.7;
+            filter: blur(2px);
+          }
+          100% { 
+            transform: translateX(0) rotateY(0deg) scale(1); 
+            opacity: 1; 
+            filter: blur(0px);
+          }
+        }
+        
+        @keyframes slide-down {
+          0% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(2px) scale(0.98); }
+          100% { transform: translateY(0) scale(1); }
+        }
+        
+        @keyframes glow-buy {
+          0%, 100% { 
+            box-shadow: 0 0 25px rgba(34, 197, 94, 0.4), inset 0 0 15px rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.6);
+            transform: scale(1);
+          }
+          25% { 
+            box-shadow: 0 0 45px rgba(34, 197, 94, 0.7), inset 0 0 25px rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.9);
+            transform: scale(1.03);
+          }
+          75% { 
+            box-shadow: 0 0 35px rgba(34, 197, 94, 0.6), inset 0 0 20px rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.7);
+            transform: scale(1.01);
+          }
+        }
+        
+        @keyframes glow-sell {
+          0%, 100% { 
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.4), inset 0 0 15px rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.6);
+            transform: scale(1);
+          }
+          25% { 
+            box-shadow: 0 0 45px rgba(239, 68, 68, 0.7), inset 0 0 25px rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.9);
+            transform: scale(1.03);
+          }
+          75% { 
+            box-shadow: 0 0 35px rgba(239, 68, 68, 0.6), inset 0 0 20px rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.7);
+            transform: scale(1.01);
+          }
+        }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50% { transform: translateY(-8px) scale(1.02); }
+        }
+        
+        @keyframes particle-float {
+          0% { 
+            transform: translateY(100vh) scale(0); 
+            opacity: 0; 
+          }
+          10% { 
+            opacity: 1; 
+            transform: translateY(90vh) scale(1);
+          }
+          50% {
+            transform: translateY(50vh) scale(1.1);
+          }
+          90% { 
+            opacity: 1; 
+            transform: translateY(10vh) scale(0.9);
+          }
+          100% { 
+            transform: translateY(-10px) scale(0); 
+            opacity: 0; 
+          }
+        }
+        
+        @keyframes gentle-wave {
+          0%, 100% { 
+            transform: translateX(-100%) scaleY(1); 
+            opacity: 0.1;
+          }
+          50% { 
+            transform: translateX(100%) scaleY(1.1); 
+            opacity: 0.2;
+          }
+        }
+        
+        @keyframes subtle-glow {
+          0%, 100% { 
+            filter: hue-rotate(0deg) brightness(1);
+          }
+          50% {
+            filter: hue-rotate(60deg) brightness(1.1);
+          }
+        }
+        
+        @keyframes balanced-pulse {
+          0%, 100% { 
+            transform: scale(1); 
+            text-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+          }
+          50% { 
+            transform: scale(1.05); 
+            text-shadow: 0 0 25px rgba(147, 51, 234, 0.8);
+          }
+        }
+        
+        @keyframes smooth-entry {
+          0% { 
+            opacity: 0; 
+            transform: translateY(20px) scale(0.9); 
+          }
+          100% { 
+            opacity: 1; 
+            transform: translateY(0) scale(1); 
+          }
+        }
+        
+        @keyframes gentle-breathe {
+          0%, 100% { 
+            transform: scale(1);
+            filter: brightness(1);
+          }
+          50% { 
+            transform: scale(1.01);
+            filter: brightness(1.05);
+          }
+        }
+        
+        .whale-glow {
+          animation: pulse-glow 4s ease-in-out infinite, subtle-glow 8s ease infinite;
+          background: linear-gradient(-45deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));
+          transition: all 0.3s ease;
+        }
+        
+        .trade-item {
+          animation: slide-in 0.6s ease-out, smooth-entry 0.8s ease-out;
+          transition: all 0.3s ease;
+        }
+        
+        .trade-item.slide-down {
+          animation: slide-down 0.3s ease;
+        }
+        
+        .buy-glow {
+          animation: glow-buy 4s ease-in-out infinite;
+          transition: all 0.3s ease;
+        }
+        
+        .sell-glow {
+          animation: glow-sell 4s ease-in-out infinite;
+          transition: all 0.3s ease;
+        }
+        
+        .whale-float {
+          animation: float 6s ease-in-out infinite, balanced-pulse 8s ease-in-out infinite;
+        }
+        
+        .particle {
+          animation: particle-float linear infinite;
+        }
+        
+        .wave-bg {
+          background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+          animation: gentle-wave 12s ease-in-out infinite;
+        }
+        
+        .symbol-glow {
+          text-shadow: 0 0 10px currentColor;
+          animation: smooth-entry 0.5s ease-out;
+        }
+        
+        .whale-badge {
+          animation: balanced-pulse 3s ease-in-out infinite;
+          filter: drop-shadow(0 0 8px currentColor);
+        }
+        
+        .copy-btn {
+          transition: all 0.2s ease;
+          animation: gentle-breathe 8s ease-in-out infinite;
+        }
+        
+        .copy-btn:hover {
+          transform: scale(1.1);
+          box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+        
+        .trade-item:hover {
+          transform: scale(1.02) translateY(-1px);
+          filter: brightness(1.05);
+        }
+      `}</style>
 
-      {/* Trade Info Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-80 p-4 z-10">
-        <div className="text-xs text-gray-400 mb-2">
-          Active Blobs: {blobsRef.current.length} | Threshold: {usd(threshold)}
-        </div>
-        {trades.slice(0, 3).map((trade, i) => (
-          <div key={`${trade.timestamp}-${i}`} className="flex justify-between items-center text-xs mb-1">
-            <span className={`font-bold ${trade.dir === 'B' ? 'text-green-400' : 'text-red-400'}`}>
-              {trade.symbol}
-            </span>
-            <span className="text-gray-300">{usd(trade.notional)}</span>
+      {/* Header */}
+      <div className="relative p-4 whale-glow border-b border-gray-700/50 backdrop-blur-sm z-10">
+        <div className="flex justify-between items-center text-sm font-semibold mb-3">
+          <span className="text-lg font-bold tracking-wider bg-gradient-to-r from-blue-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent">
+            WHALE RADAR
+          </span>
+          <div className={`w-3 h-3 rounded-full transition-all duration-500 relative ${
+            connected ? 'bg-green-400' : 'bg-red-500'
+          }`}>
+            <div className={`absolute inset-0 rounded-full animate-ping ${
+              connected ? 'bg-green-400' : 'bg-red-500'
+            }`} />
           </div>
-        ))}
+        </div>
+
+        <div className="flex items-center gap-2 text-xs mb-3 text-gray-300">
+          <span className="text-blue-400 font-bold">${(threshold/1000).toFixed(0)}K</span>
+          <div className="flex-1 relative">
+            <input
+              type="range"
+              min={50_000}
+              max={1_000_000}
+              step={25_000}
+              value={threshold}
+              onChange={e => setThreshold(+e.target.value)}
+              className="w-full h-2 bg-gray-700/50 rounded-lg cursor-pointer accent-blue-500 transition-all duration-300 hover:bg-gray-600/50 backdrop-blur-sm"
+            />
+            <div 
+              className="absolute top-0 left-0 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg pointer-events-none"
+              style={{ width: `${((threshold - 50000) / (1000000 - 50000)) * 100}%` }}
+            />
+          </div>
+          <span className="text-purple-400 font-bold">$1M</span>
+        </div>
+
+        <select
+          value={assetFilter}
+          onChange={e => setAssetFilter(e.target.value)}
+          className="w-full bg-gray-800/80 border border-gray-600/50 text-white text-xs p-2 rounded-lg focus:border-blue-500 focus:outline-none transition-all duration-300 hover:bg-gray-700/80 backdrop-blur-sm"
+        >
+          <option value="ALL">🌊 All Assets</option>
+          {['BTC', 'ETH', 'SOL', 'HYPE'].map(c => (
+            <option key={c} value={c}>₿ {c}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Trades List */}
+      <div className="flex-1 overflow-y-auto">
+        {trades.filter(t => assetFilter === 'ALL' || t.symbol === assetFilter).length === 0 ? (
+          <div className="flex items-center justify-center h-full text-gray-400 text-center px-4">
+            <div className="whale-float">
+              <div className="text-4xl mb-3">🐋</div>
+              <div className="text-sm">
+                {connected ? 'Scanning the depths...' : 'Connecting to the ocean...'}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-1 p-2">
+            {trades.filter(t => assetFilter === 'ALL' || t.symbol === assetFilter).map((t, i) => {
+              const isBuy = t.dir === 'B';
+              const isLarge = t.notional > 200000;
+
+              return (
+                <div
+                  key={`${t.timestamp}-${i}`}
+                  className={`trade-item flex items-center p-3 rounded-lg relative overflow-hidden ${
+                    isBuy 
+                      ? `bg-gradient-to-r from-green-900/40 to-green-800/25 border-l-4 border-green-500 hover:from-green-800/50 hover:to-green-700/35 ${isLarge ? 'buy-glow' : ''}` 
+                      : `bg-gradient-to-r from-red-900/40 to-red-800/25 border-l-4 border-red-500 hover:from-red-800/50 hover:to-red-700/35 ${isLarge ? 'sell-glow' : ''}`
+                  }`}
+                >
+                  {/* Animated background overlay */}
+                  <div className={`absolute inset-0 opacity-25 ${
+                    isBuy ? 'bg-gradient-to-r from-transparent via-green-400/15 to-transparent' : 'bg-gradient-to-r from-transparent via-red-400/15 to-transparent'
+                  }`} style={{ 
+                    animation: `wave ${3 + Math.random() * 2}s ease-in-out infinite`,
+                    animationDelay: `${Math.random() * 2}s`
+                  }} />
+                  
+                  {/* Additional organic shimmer effect */}
+                  <div className={`absolute inset-0 opacity-10 ${
+                    isBuy ? 'bg-gradient-to-br from-green-300/20 via-transparent to-green-500/20' : 'bg-gradient-to-br from-red-300/20 via-transparent to-red-500/20'
+                  }`} style={{ 
+                    animation: `gradient-shift ${5 + Math.random() * 3}s ease infinite`,
+                    animationDelay: `${Math.random() * 3}s`
+                  }} />
+                  
+                  <div className="flex-1 relative z-10">
+                    <div className={`font-bold text-lg tracking-wider symbol-glow ${
+                      isBuy ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      {t.symbol}
+                      {isLarge && (
+                        <span className="ml-2 text-xs bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-2 py-1 rounded-full whale-badge font-extrabold">
+                          🐋 WHALE
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-300 leading-tight font-medium">
+                      {usd(t.notional)} @ ${t.price.toLocaleString()}
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <div className={`text-xs font-bold flex items-center gap-1 ${
+                        isBuy ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        <span className={`inline-block w-2 h-2 rounded-full ${
+                          isBuy ? 'bg-green-400' : 'bg-red-400'
+                        }`} style={{ animation: 'whale-pulse 2s ease-in-out infinite' }} />
+                        {isBuy ? 'BUY' : 'SELL'}
+                      </div>
+                      <div className="text-xs text-gray-500 font-medium">
+                        {getTimeAgo(t.receivedAt)}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(t.wallet)}
+                    className="ml-3 bg-gradient-to-r from-gray-700/80 to-gray-600/80 hover:from-blue-600 hover:to-blue-500 text-white text-xs px-3 py-2 rounded-lg border border-gray-500/50 copy-btn backdrop-blur-sm"
+                    title="Copy wallet address"
+                  >
+                    📋
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
