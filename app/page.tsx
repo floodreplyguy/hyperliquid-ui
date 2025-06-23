@@ -486,8 +486,8 @@ export default function Page() {
       </div>
 
       <div className="relative z-10 flex h-screen">
-        {/* Main Content Area - 75% */}
-        <div className="w-3/4 flex flex-col">
+        {/* Main Content Area - Adjusted for extended whale watcher */}
+        <div className="w-2/3 flex flex-col">
           {/* Header - Compact */}
           <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b-2 border-green-500 p-4">
             <div className="flex items-center justify-between mb-4">
@@ -657,19 +657,20 @@ export default function Page() {
             )}
 
             {!stats && !loading && (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                <div className="text-center">
-                  <div className="text-4xl mb-3">📊</div>
-                  <div className="text-lg font-bold">Ready to Analyze</div>
-                  <div className="text-sm">Enter a wallet address to begin analysis</div>
+              <div className="flex items-center justify-center h-full text-gray-500 relative overflow-hidden">
+                <div className="dvd-bounce absolute">
+                  <div className="text-center bg-gradient-to-r from-green-400 to-blue-500 text-black px-4 py-2 rounded-lg font-bold shadow-lg">
+                    <div className="text-2xl mb-1">📊</div>
+                    <div className="text-sm">Ready to Analyze</div>
+                  </div>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Whale Watcher Sidebar - 25% */}
-        <div className="w-1/4 border-l-2 border-green-500 relative">
+        {/* Whale Watcher Sidebar - Extended to fill space */}
+        <div className="w-1/3 border-l-2 border-green-500 relative">
           <button
             onClick={openWhaleWatcherInNewTab}
             className="absolute top-2 right-2 z-20 bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-400 transition-colors"
@@ -684,6 +685,58 @@ export default function Page() {
       <style jsx>{`
         .clip-path-diamond {
           clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+        
+        .dvd-bounce {
+          animation: dvd-bounce 15s linear infinite;
+        }
+        
+        @keyframes dvd-bounce {
+          0% {
+            left: 0%;
+            top: 0%;
+            transform: translate(0, 0);
+          }
+          12.5% {
+            left: calc(100% - 150px);
+            top: 0%;
+            transform: translate(0, 0);
+          }
+          25% {
+            left: calc(100% - 150px);
+            top: calc(100% - 80px);
+            transform: translate(0, 0);
+          }
+          37.5% {
+            left: 0%;
+            top: calc(100% - 80px);
+            transform: translate(0, 0);
+          }
+          50% {
+            left: 0%;
+            top: calc(50% - 40px);
+            transform: translate(0, 0);
+          }
+          62.5% {
+            left: calc(50% - 75px);
+            top: 0%;
+            transform: translate(0, 0);
+          }
+          75% {
+            left: calc(100% - 150px);
+            top: calc(25% - 20px);
+            transform: translate(0, 0);
+          }
+          87.5% {
+            left: calc(25% - 37px);
+            top: calc(100% - 80px);
+            transform: translate(0, 0);
+          }
+          100% {
+            left: 0%;
+            top: 0%;
+            transform: translate(0, 0);
+          }
         }
       `}</style>
     </div>
