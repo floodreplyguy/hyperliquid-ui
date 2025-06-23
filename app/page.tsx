@@ -59,7 +59,7 @@ interface ApiResponse {
   recentLongs: number;
   recentShorts: number;
   confidenceScore: number;
-  traderRank: { rank: string; color: string; icon: string };
+  traderRank: { rank: string; color: string; icon: string, gradient?: string, displayName?: string, description?: string };
   winStreaks: { current: number; best: number; worst: number };
   timeBreakdown: {
     days: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
@@ -583,19 +583,74 @@ export default function Page() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-xl font-bold text-yellow-400">{stats.confidenceScore || 0}%</div>
+<div className="flex items-center gap-3">
+                        <div className="text-2xl font-bold text-yellow-400">{stats.confidenceScore || 0}</div>
                         {stats.traderRank && (
-                          <div className="flex items-center gap-1">
+                          <div className={`flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r ${stats.traderRank.gradient || 'from-gray-400 to-gray-600'} shadow-lg`}>
                             <span className="text-lg">{stats.traderRank.icon}</span>
-                            <span 
-                              className="text-xs font-bold tracking-wider"
-                              style={{ color: stats.traderRank.color }}
-                            >
-                              {stats.traderRank.rank.toUpperCase()}
-                            </span>
+                            <span className="text-sm font-bold text-white tracking-wider">
+                              {stats.traderRank.displayName || stats.traderRank.name}</span>
                           </div>
                         )}
+                      </div>
+                      {stats.traderRank?.description && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          {stats.traderRank.description}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Enhanced Calculation Info Tooltip */}
+                    <div className="relative group">
+                      <button className="text-gray-400 hover:text-white transition-colors">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+                        </svg>
+                      </button>
+                      <div className="absolute right-0 top-6 w-80 bg-gray-800 border border-gray-600 rounded-lg p-4 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                        <div className="text-sm">
+                          <div className="text-yellow-400 font-semibold mb-2">How is this calculated?</div>
+                          <div className="space-y-2 text-xs text-gray-300">
+                            <div><strong>Win Rate (40%):</strong> Your success percentage</div>
+                            <div><strong>Total PnL (35%):</strong> Net profit/loss</div>
+                            <div><strong>Risk/Reward (15%):</strong> Avg win vs avg loss</div>
+                            <div><strong>Sample Size (10%):</strong> Number of trades</div>
+                            <div><strong>Bonus Points:</strong> Consistency & volume</div>
+                          </div>
+                          <div className="text-yellow-400 mt-3 font-semibold">Rank Tiers:</div>
+                          <div className="space-y-1 text-xs">
+                            <div className="flex items-center gap-2">
+                              <span>⚡</span>
+                              <span style={{color: '#ff6b35'}}>Challenger</span>
+                              <span className="text-gray-400">100+ (Legend)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span>💎</span>
+                              <span style={{color: '#b9f2ff'}}>Diamond</span>
+                              <span className="text-gray-400">80-99 (Elite)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span>🏆</span>
+                              <span style={{color: '#e5e7eb'}}>Platinum</span>
+                              <span className="text-gray-400">65-79 (Expert)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span>🥇</span>
+                              <span style={{color: '#fbbf24'}}>Gold</span>
+                              <span className="text-gray-400">50-64 (Skilled)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span>🥈</span>
+                              <span style={{color: '#9ca3af'}}>Silver</span>
+                              <span className="text-gray-400">25-49 (Learning)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span>🥉</span>
+                              <span style={{color: '#cd7f32'}}>Bronze</span>
+                              <span className="text-gray-400">0-24 (Beginner)</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <StatCard label="Streak" value={`${(stats.winStreaks?.current || 0) > 0 ? '+' : ''}${stats.winStreaks?.current || 0}`} />
