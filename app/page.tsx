@@ -562,7 +562,7 @@ export default function Page() {
                           <div className="w-4 h-4 rounded-full bg-yellow-500/20 border border-yellow-500/50 flex items-center justify-center cursor-help">
                             <span className="text-yellow-400 text-xs font-bold">i</span>
                           </div>
-                          <div className="invisible group-hover:visible fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-gray-900/98 border border-yellow-500/70 rounded-lg p-4 text-xs z-[999999] shadow-2xl backdrop-blur-lg">
+                          <div className="invisible group-hover:visible fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-gray-900/98 border border-yellow-500/70 rounded-lg p-4 text-xs shadow-2xl backdrop-blur-lg z-[99999]">
                             {/* Close button */}
                             <div className="absolute top-2 right-2 w-4 h-4 text-yellow-400 cursor-pointer hover:text-yellow-200">×</div>
                             <div className="font-bold text-yellow-400 mb-2">Confidence Score & Ranks</div>
@@ -578,7 +578,7 @@ export default function Page() {
                                 <div>🥇 <span style={{color: '#fbbf24'}}>Gold</span>: 50-64% (Good)</div>
                                 <div>🥈 <span style={{color: '#9ca3af'}}>Silver</span>: 25-49% (Below Average)</div>
                                 <div>🥉 <span style={{color: '#cd7f32'}}>Bronze</span>: Below 25% (Needs Improvement)</div>
-                              </div>
+                                                            </div>
                             </div>
                           </div>
                         </div>
