@@ -82,7 +82,7 @@ export default function WhaleWatcher() {
   };
 
   return (
-    <div className="fixed top-0 right-0 w-[380px] h-screen overflow-hidden relative">
+    <div className="w-full h-screen overflow-hidden relative">
       {/* Animated Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-black to-gray-900">
         {/* Floating Particles */}
