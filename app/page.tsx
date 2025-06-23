@@ -487,9 +487,9 @@ export default function Page() {
 
       <div className="relative z-10 flex h-screen">
         {/* Main Content Area - Better space utilization */}
-        <div className="flex-1 flex flex-col mr-4 relative z-20">
+        <div className="flex-1 flex flex-col mr-4 relative z-10">
           {/* Header - Compact */}
-          <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b-2 border-green-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b-2 border-green-500 p-4 relative z-10">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6 bg-green-500 clip-path-diamond flex items-center justify-center">
@@ -541,7 +541,7 @@ export default function Page() {
           </div>
 
           {/* Stats Content - Optimized for single page */}
-          <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+          <div className="flex-1 p-4 space-y-4 overflow-y-auto relative z-10">
             {stats && (
               <>
                 {/* Overview Stats - Better organized grid */}
@@ -562,7 +562,7 @@ export default function Page() {
                           <div className="w-4 h-4 rounded-full bg-yellow-500/20 border border-yellow-500/50 flex items-center justify-center cursor-help">
                             <span className="text-yellow-400 text-xs font-bold">i</span>
                           </div>
-                          <div className="invisible group-hover:visible fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-gray-900/98 border border-yellow-500/70 rounded-lg p-4 text-xs shadow-2xl backdrop-blur-lg z-[99999]">
+                          <div className="invisible group-hover:visible fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-gray-900/98 border border-yellow-500/70 rounded-lg p-4 text-xs shadow-2xl backdrop-blur-lg z-[999999]" style={{zIndex: 999999}}>
                             {/* Close button */}
                             <div className="absolute top-2 right-2 w-4 h-4 text-yellow-400 cursor-pointer hover:text-yellow-200">×</div>
                             <div className="font-bold text-yellow-400 mb-2">Confidence Score & Ranks</div>
@@ -737,7 +737,7 @@ export default function Page() {
         </div>
 
         {/* Whale Watcher Sidebar - Optimized width */}
-        <div className="w-96 border-l-2 border-green-500 relative flex-shrink-0 z-10">
+        <div className="w-96 border-l-2 border-green-500 relative flex-shrink-0 z-5">
           <button
             onClick={openWhaleWatcherInNewTab}
             className="absolute top-2 right-2 z-20 bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-400 transition-colors"
