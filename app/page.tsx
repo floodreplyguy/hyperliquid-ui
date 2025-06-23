@@ -60,6 +60,7 @@ interface ApiResponse {
   recentLongs: number;
   recentShorts: number;
   confidenceScore: number;
+  traderRank: { rank: string; color: string; icon: string };
   winStreaks: { current: number; best: number; worst: number };
   timeBreakdown: {
     days: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
@@ -565,18 +566,38 @@ export default function Page() {
                           <div className="invisible group-hover:visible fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-gray-900/98 border border-yellow-500/70 rounded-lg p-4 text-xs z-[99999] shadow-2xl backdrop-blur-lg">
                             {/* Close button */}
                             <div className="absolute top-2 right-2 w-4 h-4 text-yellow-400 cursor-pointer hover:text-yellow-200">×</div>
-                            <div className="font-bold text-yellow-400 mb-2">Confidence Score Calculation</div>
+                            <div className="font-bold text-yellow-400 mb-2">Confidence Score & Ranks</div>
                             <div className="text-gray-300 space-y-1">
-                              <div>• <span className="text-green-400">Win Rate</span>: 70%+ = Exceptional, 62%+ = Very Good, 56%+ = Good</div>
+                              <div>• <span className="text-green-400">Win Rate</span>: 65%+ = Exceptional, 58%+ = Very Good, 52%+ = Good</div>
                               <div>• <span className="text-blue-400">Profitability</span>: Return ratio vs volume traded</div>
                               <div>• <span className="text-purple-400">Risk/Reward</span>: Average win vs average loss ratio</div>
                               <div>• <span className="text-orange-400">Experience</span>: Number of trades and consistency</div>
-                              <div className="text-yellow-400 mt-2 font-semibold">Score: 10-95% (Higher = Better Trader)</div>
+                              <div className="text-yellow-400 mt-2 font-semibold">Ranks:</div>
+                              <div className="space-y-1 text-xs">
+                                <div>💎 <span style={{color: '#b9f2ff'}}>Diamond</span>: 80%+ (Elite)</div>
+                                <div>🏆 <span style={{color: '#e5e7eb'}}>Platinum</span>: 65-79% (Excellent)</div>
+                                <div>🥇 <span style={{color: '#fbbf24'}}>Gold</span>: 50-64% (Good)</div>
+                                <div>🥈 <span style={{color: '#9ca3af'}}>Silver</span>: 35-49% (Average)</div>
+                                <div>🥉 <span style={{color: '#cd7f32'}}>Bronze</span>: Below 35% (Needs Improvement)</div>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                      <div className="text-xl font-bold text-yellow-400">{stats.confidenceScore || 0}%</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-xl font-bold text-yellow-400">{stats.confidenceScore || 0}%</div>
+                        {stats.traderRank && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-lg">{stats.traderRank.icon}</span>
+                            <span 
+                              className="text-xs font-bold tracking-wider"
+                              style={{ color: stats.traderRank.color }}
+                            >
+                              {stats.traderRank.rank.toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <StatCard label="Streak" value={`${(stats.winStreaks?.current || 0) > 0 ? '+' : ''}${stats.winStreaks?.current || 0}`} />
                     <StatCard label="Avg Trade" value={usd(stats.avgNotional)} />
