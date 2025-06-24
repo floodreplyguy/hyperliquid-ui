@@ -563,12 +563,20 @@ export default function Page() {
                       </div>
                       
                       <div className="flex items-center justify-center">
-                        {stats.traderRank && (
-                          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg ${stats.traderRank.gradient ? `bg-gradient-to-r ${stats.traderRank.gradient}` : 'bg-gradient-to-r from-gray-400 to-gray-600'} shadow-lg`}>
-                            <span className="text-2xl">{stats.traderRank.icon || '🥉'}</span>
+                        {stats.traderRank ? (
+                          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg ${stats.traderRank.gradient ? `bg-gradient-to-r ${stats.traderRank.gradient}` : 'bg-gradient-to-r from-orange-600 to-red-700'} shadow-lg`}>
+                            <div 
+                              className="flex-shrink-0" 
+                              dangerouslySetInnerHTML={{ __html: stats.traderRank.logo || `<svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="45" fill="#cd7f32" stroke="#b8860b" stroke-width="2"/><text x="50" y="58" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#fff">HL</text></svg>` }}
+                            />
                             <span className="text-lg font-bold text-white tracking-wider">
-                              {stats.traderRank.displayName || stats.traderRank.rank || 'Bronze'}
+                              {stats.traderRank.displayName || stats.traderRank.name || stats.traderRank.rank || 'Bronze'}
                             </span>
+                          </div>
+                        ) : (
+                          <div className="bg-gradient-to-r from-orange-600 to-red-700 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg">
+                            <div dangerouslySetInnerHTML={{ __html: `<svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="45" fill="#cd7f32" stroke="#b8860b" stroke-width="2"/><text x="50" y="58" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#fff">HL</text></svg>` }} />
+                            <span className="text-lg font-bold text-white tracking-wider">Bronze</span>
                           </div>
                         )}
                       </div>
