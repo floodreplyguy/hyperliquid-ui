@@ -556,42 +556,19 @@ export default function Page() {
                     <StatCard label="PnL" value={usd(stats.realizedPnl)} />
                     <StatCard label="Volume" value={usd(stats.volume)} />
                     
-                    {/* Expanded Confidence Score Section */}
+                    {/* Trader Rank Section */}
                     <div className="col-span-2 bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-yellow-500/50 rounded p-3 backdrop-blur-sm">
-                      <div className="flex items-center gap-2 text-xs font-semibold text-green-400 mb-2 tracking-wide">
-                        <span>Confidence Score</span>
-                        <div className="group relative z-50">
-                          <div className="w-4 h-4 rounded-full bg-yellow-500/20 border border-yellow-500/50 flex items-center justify-center cursor-help">
-                            <span className="text-yellow-400 text-xs font-bold">i</span>
-                          </div>
-                          <div className="invisible group-hover:visible fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-gray-900/98 border border-yellow-500/70 rounded-lg p-4 text-xs shadow-2xl backdrop-blur-lg z-[999999]" style={{zIndex: 999999}}>
-                            <div className="font-bold text-yellow-400 mb-2">Confidence Score & Ranks</div>
-                            <div className="text-gray-300 space-y-1">
-                              <div>• <span className="text-green-400">Win Rate</span>: 65%+ = Exceptional, 58%+ = Very Good, 52%+ = Good</div>
-                              <div>• <span className="text-blue-400">Profitability</span>: Return ratio vs volume traded</div>
-                              <div>• <span className="text-purple-400">Risk/Reward</span>: Average win vs average loss ratio</div>
-                              <div>• <span className="text-orange-400">Experience</span>: Number of trades and consistency</div>
-                              <div className="text-yellow-400 mt-2 font-semibold">Ranks:</div>
-                              <div className="space-y-1 text-xs">
-                                <div>⚡ <span style={{color: '#ff6b35'}}>Challenger</span>: 100+ (Legend)</div>
-                                <div>💎 <span style={{color: '#b9f2ff'}}>Diamond</span>: 80-99 (Elite)</div>
-                                <div>🏆 <span style={{color: '#e5e7eb'}}>Platinum</span>: 65-79 (Expert)</div>
-                                <div>🥇 <span style={{color: '#fbbf24'}}>Gold</span>: 50-64 (Skilled)</div>
-                                <div>🥈 <span style={{color: '#9ca3af'}}>Silver</span>: 25-49 (Learning)</div>
-                                <div>🥉 <span style={{color: '#cd7f32'}}>Bronze</span>: 0-24 (Beginner)</div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                      <div className="text-xs font-semibold text-green-400 mb-2 tracking-wide">
+                        TRADER RANK
                       </div>
                       
-                      <div className="flex items-center justify-between">
-                        <div className="text-3xl font-bold text-yellow-400">{stats.confidenceScore || 0}</div>
+                      <div className="flex items-center justify-center">
                         {stats.traderRank && (
-                          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${stats.traderRank.gradient ? `bg-gradient-to-r ${stats.traderRank.gradient}` : 'bg-gradient-to-r from-gray-400 to-gray-600'} shadow-lg`}>
-                            <span className="text-lg">{stats.traderRank.icon || '🥉'}</span>
-                            <span className="text-sm font-bold text-white tracking-wider">
-                              {stats.traderRank.rank || 'Bronze'}</span>
+                          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg ${stats.traderRank.gradient ? `bg-gradient-to-r ${stats.traderRank.gradient}` : 'bg-gradient-to-r from-gray-400 to-gray-600'} shadow-lg`}>
+                            <span className="text-2xl">{stats.traderRank.icon || '🥉'}</span>
+                            <span className="text-lg font-bold text-white tracking-wider">
+                              {stats.traderRank.displayName || stats.traderRank.rank || 'Bronze'}
+                            </span>
                           </div>
                         )}
                       </div>
