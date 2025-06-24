@@ -59,8 +59,8 @@ interface ApiResponse {
   recentLongs: number;
   recentShorts: number;
   confidenceScore: number;
-  traderRank: { rank: string; color: string; icon?: string; gradient?: string; name?: string; displayName?: string; description?: string };
-  winStreaks: { current: number; best: number; worst: number };
+  traderRank: { rank?: string; color?: string; icon?: string; gradient?: string; name?: string; displayName?: string; description?: string; logo?: string; min_score?: number; subTier?: number };
+  winStreaks?: { current: number; best: number; worst: number };
   timeBreakdown: {
     days: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
     sessions: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
@@ -567,7 +567,7 @@ export default function Page() {
                           <div className={`flex items-center gap-3 px-4 py-3 rounded-lg ${stats.traderRank.gradient ? `bg-gradient-to-r ${stats.traderRank.gradient}` : 'bg-gradient-to-r from-orange-600 to-red-700'} shadow-lg`}>
                             <div 
                               className="flex-shrink-0" 
-                              dangerouslySetInnerHTML={{ __html: stats.traderRank.logo || `<svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="45" fill="#cd7f32" stroke="#b8860b" stroke-width="2"/><text x="50" y="58" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#fff">HL</text></svg>` }}
+                              dangerouslySetInnerHTML={{ __html: stats.traderRank.logo || stats.traderRank.icon || `<svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="45" fill="#cd7f32" stroke="#b8860b" stroke-width="2"/><text x="50" y="58" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#fff">HL</text></svg>` }}
                             />
                             <span className="text-lg font-bold text-white tracking-wider">
                               {stats.traderRank.displayName || stats.traderRank.name || stats.traderRank.rank || 'Bronze'}
