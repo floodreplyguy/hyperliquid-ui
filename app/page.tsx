@@ -59,7 +59,7 @@ interface ApiResponse {
   recentLongs: number;
   recentShorts: number;
   confidenceScore: number;
-  traderRank: { rank: string; color: string; icon: string, gradient?: string, displayName?: string, description?: string };
+  traderRank: { rank: string; color: string; icon?: string; gradient?: string; name?: string; displayName?: string; description?: string };
   winStreaks: { current: number; best: number; worst: number };
   timeBreakdown: {
     days: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
@@ -589,18 +589,12 @@ export default function Page() {
                         <div className="text-3xl font-bold text-yellow-400">{stats.confidenceScore || 0}</div>
                         {stats.traderRank && (
                           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${stats.traderRank.gradient ? `bg-gradient-to-r ${stats.traderRank.gradient}` : 'bg-gradient-to-r from-gray-400 to-gray-600'} shadow-lg`}>
-                            <span className="text-lg">{stats.traderRank.icon}</span>
+                            <span className="text-lg">{stats.traderRank.icon || '🥉'}</span>
                             <span className="text-sm font-bold text-white tracking-wider">
-                              {stats.traderRank.displayName || stats.traderRank.name || stats.traderRank.rank}</span>
+                              {stats.traderRank.rank || 'Bronze'}</span>
                           </div>
                         )}
                       </div>
-                      
-                      {stats.traderRank?.description && (
-                        <div className="text-xs text-gray-400 mt-2">
-                          {stats.traderRank.description}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </section>
