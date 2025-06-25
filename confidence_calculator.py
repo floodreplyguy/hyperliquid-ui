@@ -169,71 +169,71 @@ class ConfidenceCalculator:
             
             # 1. WIN RATE SCORING (40% weight) - Most important
             if win_rate >= 0.75:        # 75%+ exceptional
-                score += 35
-            elif win_rate >= 0.65:      # 65%+ excellent  
-                score += 25
+                score += 30
+            elif win_rate >= 0.65:      # 65%+ excellent
+                score += 20
             elif win_rate >= 0.55:      # 55%+ very good
-                score += 15
+                score += 10
             elif win_rate >= 0.50:      # 50%+ good
                 score += 5
             elif win_rate >= 0.45:      # 45%+ average
                 score -= 5
             elif win_rate >= 0.40:      # 40%+ below average
-                score -= 15
+                score -= 10
             elif win_rate >= 0.30:      # 30%+ poor
-                score -= 25
+                score -= 20
             else:                       # <30% very poor
-                score -= 35
+                score -= 30
             
             # 2. PNL SCORING (35% weight) - Second most important
             if total_pnl >= 100000:     # $100k+ is diamond tier
-                score += 30
+                score += 25
             elif total_pnl >= 50000:    # $50k+ excellent
-                score += 20
+                score += 18
             elif total_pnl >= 25000:    # $25k+ very good
-                score += 15
+                score += 12
             elif total_pnl >= 10000:    # $10k+ good
-                score += 10
+                score += 8
             elif total_pnl >= 5000:     # $5k+ okay
-                score += 5
+                score += 4
             elif total_pnl >= 1000:     # $1k+ neutral
                 score += 0
             elif total_pnl >= 0:        # Break even
-                score -= 5
+                score -= 4
             elif total_pnl >= -5000:    # Small loss
-                score -= 10
+                score -= 8
             elif total_pnl >= -10000:   # Medium loss
-                score -= 20
+                score -= 16
             else:                       # Large loss
-                score -= 30
+                score -= 24
             
             # 3. RISK/REWARD RATIO (15% weight)
             if avg_win > 0 and avg_loss < 0:
                 risk_reward = abs(avg_win / avg_loss)
                 if risk_reward >= 3.0:      # Excellent 3:1
-                    score += 15
+                    score += 12
                 elif risk_reward >= 2.0:    # Very good 2:1
-                    score += 10
+                    score += 8
                 elif risk_reward >= 1.5:    # Good 1.5:1
-                    score += 5
+                    score += 4
                 elif risk_reward >= 1.0:    # Break even 1:1
                     score += 0
                 elif risk_reward >= 0.8:    # Below par
-                    score -= 5
+                    score -= 4
                 else:                       # Poor risk management
-                    score -= 10
+                    score -= 8
             
             # 4. SAMPLE SIZE BONUS (10% weight) - Confidence in data
             if len(trades) >= 1000:     # Very high confidence
-                score += 10
+                score += 8
             elif len(trades) >= 500:    # High confidence
-                score += 7
+                score += 6
             elif len(trades) >= 200:    # Good confidence
-                score += 5
+                score += 4
             elif len(trades) >= 100:    # Moderate confidence
-                score += 3
+                score += 2
             elif len(trades) >= 50:     # Low confidence
-                score += 1
+                score += 0
             else:                       # Very low confidence
                 score -= 2
             
