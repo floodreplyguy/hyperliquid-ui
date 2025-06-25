@@ -67,12 +67,6 @@ interface ApiResponse {
     hours: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
   };
   openPositions: { symbol: string; side: string; size: number; entryPrice: number; unrealizedPnl: number }[];
-  calculationExplanation?: {
-    title: string;
-    description: string;
-    factors: { name: string; weight: string; description: string }[];
-    ranks: { name: string; range: string; description: string }[];
-  };
 }
 
 /* ───────── Helpers ───────── */
@@ -86,7 +80,6 @@ export default function Page() {
   const [stats, setStats] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showRankInfo, setShowRankInfo] = useState(false);
 
   const fetchStats = async () => {
     if (!wallet.trim()) {
@@ -564,53 +557,35 @@ export default function Page() {
                     <StatCard label="Volume" value={usd(stats.volume)} />
                     
                     {/* Trader Rank Section */}
-                    <div className="relative col-span-2 bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-yellow-500/50 rounded p-3 backdrop-blur-sm">
-                      <div className="text-xs font-semibold text-green-400 mb-2 tracking-wide flex items-center gap-1">
+                    <div className="col-span-2 bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-yellow-500/50 rounded p-3 backdrop-blur-sm">
+                      <div className="text-xs font-semibold text-green-400 mb-2 tracking-wide">
                         TRADER RANK
-                        <span
-                          className="relative ml-1"
-                          onMouseEnter={() => setShowRankInfo(true)}
-                          onMouseLeave={() => setShowRankInfo(false)}
-                        >
-                          <span className="cursor-pointer text-gray-300">?</span>
-                          {showRankInfo && stats.calculationExplanation && (
-                            <div className="absolute left-0 top-full z-10 mt-1 w-72 rounded-lg bg-gray-800 p-3 text-sm text-gray-200 shadow-lg">
-                              <div className="font-bold text-green-400 mb-1">
-                                {stats.calculationExplanation.title}
-                              </div>
-                              <p className="mb-2 text-gray-300">
-                                {stats.traderRank.description}
-                              </p>
-                              <ul className="list-disc list-inside space-y-1">
-                                {stats.calculationExplanation.factors.map((f, i) => (
-                                  <li key={i}>
-                                    <span className="font-semibold">{f.name}</span> ({f.weight})
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </span>
                       </div>
                       
                       <div className="flex items-center justify-center">
                         {stats.traderRank ? (
                           <div className={`flex items-center gap-3 px-4 py-3 rounded-lg ${stats.traderRank.gradient ? `bg-gradient-to-r ${stats.traderRank.gradient}` : 'bg-gradient-to-r from-orange-600 to-red-700'} shadow-lg`}>
-                            <div 
-                              className="flex-shrink-0" 
-                              dangerouslySetInnerHTML={{ __html: stats.traderRank.logo || stats.traderRank.icon || `<svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="45" fill="#cd7f32" stroke="#b8860b" stroke-width="2"/><text x="50" y="58" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#fff">HL</text></svg>` }}
-                            />
+                            <div className="flex-shrink-0 text-2xl">
+                              {stats.traderRank.logo || '🥉'}
+                            </div>
                             <span className="text-lg font-bold text-white tracking-wider">
-                              {stats.traderRank.displayName || stats.traderRank.name || stats.traderRank.rank || 'Bronze'}
+                              {stats.traderRank.displayName || stats.traderRank.name || 'Bronze'}
                             </span>
                           </div>
                         ) : (
                           <div className="bg-gradient-to-r from-orange-600 to-red-700 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg">
-                            <div dangerouslySetInnerHTML={{ __html: `<svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="45" fill="#cd7f32" stroke="#b8860b" stroke-width="2"/><text x="50" y="58" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle" fill="#fff">HL</text></svg>` }} />
+                            <div className="flex-shrink-0 text-2xl">🥉</div>
                             <span className="text-lg font-bold text-white tracking-wider">Bronze</span>
                           </div>
                         )}
                       </div>
+                      
+                      {/* Debug info (remove later) */}
+                      {stats.confidenceScore !== undefined && (
+                        <div className="text-xs text-gray-400 text-center mt-2">
+                          Score: {stats.confidenceScore}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </section>
