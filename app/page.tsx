@@ -67,6 +67,12 @@ interface ApiResponse {
     hours: Record<string, { trades: number; winRate: number; avgPnl: number; totalPnl: number }>;
   };
   openPositions: { symbol: string; side: string; size: number; entryPrice: number; unrealizedPnl: number }[];
+  calculationExplanation?: {
+    title: string;
+    description: string;
+    factors: { name: string; weight: string; description: string }[];
+    ranks: { name: string; range: string; description: string }[];
+  };
 }
 
 /* ───────── Helpers ───────── */
@@ -80,6 +86,7 @@ export default function Page() {
   const [stats, setStats] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showRankInfo, setShowRankInfo] = useState(false);
 
   const fetchStats = async () => {
     if (!wallet.trim()) {
@@ -557,9 +564,33 @@ export default function Page() {
                     <StatCard label="Volume" value={usd(stats.volume)} />
                     
                     {/* Trader Rank Section */}
-                    <div className="col-span-2 bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-yellow-500/50 rounded p-3 backdrop-blur-sm">
-                      <div className="text-xs font-semibold text-green-400 mb-2 tracking-wide">
+                    <div className="relative col-span-2 bg-gradient-to-br from-gray-800/80 to-gray-700/60 border border-yellow-500/50 rounded p-3 backdrop-blur-sm">
+                      <div className="text-xs font-semibold text-green-400 mb-2 tracking-wide flex items-center gap-1">
                         TRADER RANK
+                        <span
+                          className="relative ml-1"
+                          onMouseEnter={() => setShowRankInfo(true)}
+                          onMouseLeave={() => setShowRankInfo(false)}
+                        >
+                          <span className="cursor-pointer text-gray-300">?</span>
+                          {showRankInfo && stats.calculationExplanation && (
+                            <div className="absolute left-0 top-full z-10 mt-1 w-72 rounded-lg bg-gray-800 p-3 text-sm text-gray-200 shadow-lg">
+                              <div className="font-bold text-green-400 mb-1">
+                                {stats.calculationExplanation.title}
+                              </div>
+                              <p className="mb-2 text-gray-300">
+                                {stats.traderRank.description}
+                              </p>
+                              <ul className="list-disc list-inside space-y-1">
+                                {stats.calculationExplanation.factors.map((f, i) => (
+                                  <li key={i}>
+                                    <span className="font-semibold">{f.name}</span> ({f.weight})
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </span>
                       </div>
                       
                       <div className="flex items-center justify-center">
