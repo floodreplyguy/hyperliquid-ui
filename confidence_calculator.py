@@ -86,59 +86,45 @@ class ConfidenceCalculator:
             print(f"DEBUG Confidence: {len(trades)} trades, Win Rate: {win_rate:.3f}, PnL: ${total_pnl:.2f}, Volume: ${total_volume:.2f}")
             print(f"DEBUG Winners: {len(winners)}, Losers: {len(losers)}, Avg Win: ${avg_win:.2f}, Avg Loss: ${avg_loss:.2f}")
 
-            # Start with neutral base
-            score = 50
+            # Start from zero and build score based on performance
+            score = 0
 
-            # 1. WIN RATE SCORING (40% weight) - Most important
+            # 1. WIN RATE SCORING (40% weight)
             win_rate_points = 0
-            if win_rate >= 0.65:        # 65%+ exceptional (very rare)
-                win_rate_points = 35
-            elif win_rate >= 0.60:      # 60%+ amazing
-                win_rate_points = 25
-            elif win_rate >= 0.55:      # 55%+ excellent
+            if win_rate >= 0.50:      # 50%+ awesome
+                win_rate_points = 40
+            elif win_rate >= 0.40:    # 40%+ good
+                win_rate_points = 30
+            elif win_rate >= 0.30:    # 30% average
                 win_rate_points = 20
-            elif win_rate >= 0.50:      # 50%+ great
-                win_rate_points = 15
-            elif win_rate >= 0.45:      # 45%+ good
+            elif win_rate >= 0.20:    # 20% bronze tier
                 win_rate_points = 10
-            elif win_rate >= 0.40:      # 40%+ decent
-                win_rate_points = 5
-            elif win_rate >= 0.35:      # 35%+ below average
-                win_rate_points = -5
-            elif win_rate >= 0.30:      # 30%+ poor
-                win_rate_points = -15
-            else:                       # <30% very poor
-                win_rate_points = -25
+            else:                     # below 20%
+                win_rate_points = 0
             
             score += win_rate_points
             print(f"DEBUG: Win rate {win_rate:.3f} -> {win_rate_points} points")
 
-            # 2. PNL SCORING (35% weight) - Second most important
+            # 2. PNL SCORING (40% weight)
             pnl_points = 0
-            if total_pnl >= 500000:     # $500k+ legendary
+            if total_pnl >= 200000:     # Hundreds of thousands - diamond tier
                 pnl_points = 40
-            elif total_pnl >= 250000:   # $250k+ exceptional
+            elif total_pnl >= 100000:   # Six figures
                 pnl_points = 35
-            elif total_pnl >= 100000:   # $100k+ diamond tier - very impressive
+            elif total_pnl >= 50000:    # Very strong
                 pnl_points = 30
-            elif total_pnl >= 50000:    # $50k+ excellent
+            elif total_pnl >= 10000:    # Solid profits
                 pnl_points = 25
-            elif total_pnl >= 25000:    # $25k+ very good
+            elif total_pnl >= 5000:     # Average
                 pnl_points = 20
-            elif total_pnl >= 10000:    # $10k+ good
+            elif total_pnl >= 1000:     # A couple thousand
                 pnl_points = 15
-            elif total_pnl >= 5000:     # $5k+ decent
-                pnl_points = 10
-            elif total_pnl >= 1000:     # $1k+ okay
-                pnl_points = 5
             elif total_pnl >= 0:        # Break even
-                pnl_points = 0
+                pnl_points = 10
             elif total_pnl >= -5000:    # Small loss
-                pnl_points = -10
-            elif total_pnl >= -10000:   # Medium loss
-                pnl_points = -20
+                pnl_points = 5
             else:                       # Large loss
-                pnl_points = -30
+                pnl_points = 0
             
             score += pnl_points
             print(f"DEBUG: PnL ${total_pnl:.2f} -> {pnl_points} points")
@@ -147,41 +133,44 @@ class ConfidenceCalculator:
             rr_points = 0
             if avg_win > 0 and avg_loss < 0:
                 risk_reward = abs(avg_win / avg_loss)
-                if risk_reward >= 3.0:      # Excellent 3:1
+                if risk_reward >= 2.0:
                     rr_points = 15
-                elif risk_reward >= 2.0:    # Very good 2:1
-                    rr_points = 10
-                elif risk_reward >= 1.5:    # Good 1.5:1
+                elif risk_reward >= 1.5:
+                    rr_points = 12
+                elif risk_reward >= 1.2:
+                    rr_points = 8
+                elif risk_reward >= 1.0:
                     rr_points = 5
-                elif risk_reward >= 1.0:    # Break even 1:1
+                elif risk_reward >= 0.8:
+                    rr_points = 2
+                else:
                     rr_points = 0
-                elif risk_reward >= 0.8:    # Below par
-                    rr_points = -5
-                else:                       # Poor risk management
-                    rr_points = -10
                 print(f"DEBUG: Risk/Reward {risk_reward:.2f} -> {rr_points} points")
             else:
                 print(f"DEBUG: Cannot calculate R/R (avg_win: {avg_win}, avg_loss: {avg_loss})")
-            
+
             score += rr_points
 
-            # 4. SAMPLE SIZE BONUS (10% weight) - Confidence in data
-            size_points = 0
-            if len(trades) >= 1000:     # Very high confidence
-                size_points = 10
-            elif len(trades) >= 500:    # High confidence
-                size_points = 7
-            elif len(trades) >= 200:    # Good confidence
-                size_points = 5
-            elif len(trades) >= 100:    # Moderate confidence
-                size_points = 3
-            elif len(trades) >= 50:     # Low confidence
-                size_points = 1
-            else:                       # Very low confidence
-                size_points = -2
-            
-            score += size_points
-            print(f"DEBUG: Sample size {len(trades)} -> {size_points} points")
+            # 4. TIME CONSISTENCY (5% weight)
+            time_points = 0
+            duration_days = 0
+            try:
+                times = [t.get("time") for t in trades if t.get("time") is not None]
+                if times:
+                    start = min(times)
+                    end = max(times)
+                    duration_days = (end - start) / (1000 * 60 * 60 * 24)
+                    if duration_days >= 365:
+                        time_points = 5
+                    elif duration_days >= 180:
+                        time_points = 3
+                    elif duration_days >= 90:
+                        time_points = 1
+                print(f"DEBUG: Trading duration {duration_days:.1f} days -> {time_points} points")
+            except Exception as e:
+                print(f"DEBUG: Failed to compute trading duration: {e}")
+
+            score += time_points
 
             # 5. BONUS POINTS for exceptional performance
             bonus = 0
@@ -208,7 +197,7 @@ class ConfidenceCalculator:
 
             final_score = max(0, score + bonus)
 
-            print(f"DEBUG: Final calculation - Base: 50, WR: {win_rate_points}, PnL: {pnl_points}, RR: {rr_points}, Size: {size_points}, Bonus: {bonus}")
+            print(f"DEBUG: Final calculation - WR: {win_rate_points}, PnL: {pnl_points}, RR: {rr_points}, Time: {time_points}, Bonus: {bonus}")
             print(f"DEBUG: Final score: {final_score} (base score: {score}, bonus: {bonus})")
 
             rank_info = self.get_rank(final_score)
@@ -221,7 +210,7 @@ class ConfidenceCalculator:
                     "winRate": win_rate,
                     "totalPnl": total_pnl,
                     "riskReward": abs(avg_win / avg_loss) if avg_win > 0 and avg_loss < 0 else 0,
-                    "sampleSize": len(trades),
+                    "tradingDays": duration_days if 'duration_days' in locals() else 0,
                     "bonus": bonus
                 }
             }
@@ -279,8 +268,9 @@ class ConfidenceCalculator:
                 min_score = 80
             
             progress_in_rank = score - min_score
-            # Sub-tier 4 is highest (top 25%), sub-tier 1 is lowest (bottom 25%)
-            sub_tier = min(4, max(1, int(progress_in_rank / (rank_range / 4)) + 1))
+            # Sub-tier 1 is highest, 4 is lowest
+            sub_tier = 4 - int(progress_in_rank / (rank_range / 4))
+            sub_tier = max(1, min(4, sub_tier))
             rank_info["subTier"] = sub_tier
             rank_info["displayName"] = f'{rank_info["name"]} {sub_tier}'
             
@@ -299,9 +289,9 @@ class ConfidenceCalculator:
             "description": "Based on your recent trading performance across multiple factors:",
             "factors": [
                 {"name": "Win Rate", "weight": "40%", "description": "Percentage of profitable trades"},
-                {"name": "Total PnL", "weight": "35%", "description": "Net profit/loss from all trades"},
+                {"name": "Total PnL", "weight": "40%", "description": "Net profit/loss from all trades"},
                 {"name": "Risk/Reward", "weight": "15%", "description": "Average win vs average loss ratio"},
-                {"name": "Sample Size", "weight": "10%", "description": "Number of trades for statistical confidence"},
+                {"name": "Time Consistency", "weight": "5%", "description": "How long the account has been actively trading"},
                 {"name": "Bonus Points", "weight": "Variable", "description": "Consistency, volume, and exceptional performance"}
             ],
             "ranks": [

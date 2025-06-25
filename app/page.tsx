@@ -148,7 +148,7 @@ const calculateRank = (score: number): RankInfo => {
   if (key !== 'challenger') {
     const min = base.min_score;
     const progress = score - min;
-    const subTier = Math.min(4, Math.max(1, Math.floor(progress / 5) + 1));
+    const subTier = Math.max(1, Math.min(4, 4 - Math.floor(progress / 5)));
     base.subTier = subTier;
     base.displayName = `${base.name} ${subTier}`;
   }
@@ -850,19 +850,19 @@ export default function Page() {
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
                   <span className="text-yellow-400">Win Rate (40%)</span>
-                  <span className="text-gray-300">40%+ decent, 50%+ great, 60%+ amazing</span>
+                  <span className="text-gray-300">20% bronze, 30% average, 50%+ awesome</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-green-400">Total PnL (35%)</span>
+                  <span className="text-green-400">Total PnL (40%)</span>
                   <span className="text-gray-300">$100k+ diamond tier</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-blue-400">Risk/Reward (15%)</span>
-                  <span className="text-gray-300">Avg win vs avg loss</span>
+                  <span className="text-gray-300">Avg win vs avg loss ratio</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-purple-400">Sample Size (10%)</span>
-                  <span className="text-gray-300">Trade count confidence</span>
+                  <span className="text-purple-400">Time Consistency (5%)</span>
+                  <span className="text-gray-300">How long the account has traded</span>
                 </div>
               </div>
 
