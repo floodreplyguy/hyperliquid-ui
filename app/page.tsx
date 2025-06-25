@@ -74,12 +74,94 @@ const usd = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 
+interface RankInfo {
+  name: string;
+  displayName: string;
+  logo: string;
+  gradient: string;
+  description: string;
+  min_score: number;
+  subTier?: number;
+}
+
+const rankDefs: Record<string, RankInfo> = {
+  challenger: {
+    min_score: 100,
+    name: 'Challenger',
+    displayName: 'Challenger',
+    logo: '⚡',
+    gradient: 'from-orange-500 to-red-500',
+    description: 'Legendary Trader - Beyond Diamond',
+  },
+  diamond: {
+    min_score: 80,
+    name: 'Diamond',
+    displayName: 'Diamond',
+    logo: '💎',
+    gradient: 'from-cyan-400 to-blue-500',
+    description: 'Elite Trader - Exceptional Performance',
+  },
+  platinum: {
+    min_score: 60,
+    name: 'Platinum',
+    displayName: 'Platinum',
+    logo: '🏆',
+    gradient: 'from-gray-300 to-gray-500',
+    description: 'Expert Trader - Excellent Consistency',
+  },
+  gold: {
+    min_score: 40,
+    name: 'Gold',
+    displayName: 'Gold',
+    logo: '🥇',
+    gradient: 'from-yellow-400 to-yellow-600',
+    description: 'Skilled Trader - Above Average',
+  },
+  silver: {
+    min_score: 20,
+    name: 'Silver',
+    displayName: 'Silver',
+    logo: '🥈',
+    gradient: 'from-gray-400 to-gray-600',
+    description: 'Developing Trader - Room for Growth',
+  },
+  bronze: {
+    min_score: 0,
+    name: 'Bronze',
+    displayName: 'Bronze',
+    logo: '🥉',
+    gradient: 'from-orange-600 to-red-700',
+    description: 'Learning Trader - Focus on Improvement',
+  },
+};
+
+const calculateRank = (score: number): RankInfo => {
+  let key: keyof typeof rankDefs;
+  if (score >= 100) key = 'challenger';
+  else if (score >= 80) key = 'diamond';
+  else if (score >= 60) key = 'platinum';
+  else if (score >= 40) key = 'gold';
+  else if (score >= 20) key = 'silver';
+  else key = 'bronze';
+
+  const base = { ...rankDefs[key] };
+  if (key !== 'challenger') {
+    const min = base.min_score;
+    const progress = score - min;
+    const subTier = Math.min(4, Math.max(1, Math.floor(progress / 5) + 1));
+    base.subTier = subTier;
+    base.displayName = `${base.name} ${subTier}`;
+  }
+  return base;
+};
+
 /* ───────── Main Component ───────── */
 export default function Page() {
   const [wallet, setWallet] = useState('');
   const [stats, setStats] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showRankInfo, setShowRankInfo] = useState(false);
 
   const fetchStats = async () => {
     if (!wallet.trim()) {
@@ -98,6 +180,9 @@ export default function Page() {
       if ((json as any).error) throw new Error((json as any).error);
       const statsData = json as ApiResponse;
       console.log('Confidence score received:', statsData.confidenceScore);
+      if (!statsData.traderRank || typeof statsData.traderRank !== 'object') {
+        statsData.traderRank = calculateRank(statsData.confidenceScore);
+      }
       setStats(statsData);
     } catch (err: any) {
       setError(err.message ?? 'Failed to fetch');
@@ -564,68 +649,12 @@ export default function Page() {
                         </div>
                         
                         {/* Info Button */}
-                        <div className="relative group">
-                          <button className="w-5 h-5 bg-blue-500 rounded-full text-white text-xs flex items-center justify-center hover:bg-blue-400 transition-colors">
-                            ?
-                          </button>
-                          
-                          {/* Tooltip */}
-                          <div className="absolute right-0 top-6 w-80 bg-gray-900 border border-gray-600 rounded-lg p-4 shadow-xl z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
-                            <div className="text-sm text-white">
-                              <div className="font-bold text-green-400 mb-2">Rank Calculation</div>
-                              <div className="text-xs text-gray-300 mb-3">Based on trading performance across multiple factors:</div>
-                              
-                              <div className="space-y-2 text-xs">
-                                <div className="flex justify-between">
-                                  <span className="text-yellow-400">Win Rate (40%)</span>
-                                  <span className="text-gray-300">40%+ decent, 50%+ great, 60%+ amazing</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-green-400">Total PnL (35%)</span>
-                                  <span className="text-gray-300">$100k+ diamond tier</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-blue-400">Risk/Reward (15%)</span>
-                                  <span className="text-gray-300">Avg win vs avg loss</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-purple-400">Sample Size (10%)</span>
-                                  <span className="text-gray-300">Trade count confidence</span>
-                                </div>
-                              </div>
-                              
-                              <div className="border-t border-gray-700 mt-3 pt-3">
-                                <div className="font-bold text-orange-400 mb-2 text-xs">Rank Tiers</div>
-                                <div className="space-y-1 text-xs">
-                                  <div className="flex justify-between">
-                                    <span className="text-orange-400">🏆 Challenger</span>
-                                    <span className="text-gray-300">100+ (Legendary)</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-cyan-400">💎 Diamond</span>
-                                    <span className="text-gray-300">80-99 (Elite)</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-300">🏆 Platinum</span>
-                                    <span className="text-gray-300">60-79 (Expert)</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-yellow-400">🥇 Gold</span>
-                                    <span className="text-gray-300">40-59 (Skilled)</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-400">🥈 Silver</span>
-                                    <span className="text-gray-300">20-39 (Developing)</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-orange-600">🥉 Bronze</span>
-                                    <span className="text-gray-300">0-19 (Learning)</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                        <button
+                          onClick={() => setShowRankInfo(true)}
+                          className="w-5 h-5 bg-blue-500 rounded-full text-white text-xs flex items-center justify-center hover:bg-blue-400 transition-colors"
+                        >
+                          ?
+                        </button>
                       </div>
                       
                       <div className="flex items-center justify-center">
@@ -801,6 +830,75 @@ export default function Page() {
           <WhaleWatcher />
         </div>
       </div>
+
+      {showRankInfo && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShowRankInfo(false)}>
+          <div
+            className="relative bg-gray-900 border border-gray-600 rounded-lg p-4 w-80 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowRankInfo(false)}
+              className="absolute top-1 right-1 text-gray-400 hover:text-white"
+            >
+              ✕
+            </button>
+            <div className="text-sm text-white">
+              <div className="font-bold text-green-400 mb-2">Rank Calculation</div>
+              <div className="text-xs text-gray-300 mb-3">Based on trading performance across multiple factors:</div>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-yellow-400">Win Rate (40%)</span>
+                  <span className="text-gray-300">40%+ decent, 50%+ great, 60%+ amazing</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-green-400">Total PnL (35%)</span>
+                  <span className="text-gray-300">$100k+ diamond tier</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-blue-400">Risk/Reward (15%)</span>
+                  <span className="text-gray-300">Avg win vs avg loss</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-purple-400">Sample Size (10%)</span>
+                  <span className="text-gray-300">Trade count confidence</span>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-700 mt-3 pt-3">
+                <div className="font-bold text-orange-400 mb-2 text-xs">Rank Tiers</div>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-orange-400">🏆 Challenger</span>
+                    <span className="text-gray-300">100+ (Legendary)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-cyan-400">💎 Diamond</span>
+                    <span className="text-gray-300">80-99 (Elite)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">🏆 Platinum</span>
+                    <span className="text-gray-300">60-79 (Expert)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-yellow-400">🥇 Gold</span>
+                    <span className="text-gray-300">40-59 (Skilled)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">🥈 Silver</span>
+                    <span className="text-gray-300">20-39 (Developing)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-orange-600">🥉 Bronze</span>
+                    <span className="text-gray-300">0-19 (Learning)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .clip-path-diamond {
