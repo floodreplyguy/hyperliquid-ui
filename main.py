@@ -3,6 +3,7 @@ from flask_cors import CORS
 from hyperliquid.info import Info
 from hyperliquid.utils import constants
 import pandas as pd
+from confidence_calculator import ConfidenceCalculator
 
 app = Flask(__name__)
 CORS(app)  # Allow cross-origin requests
@@ -41,6 +42,9 @@ def stats():
     df_sorted["cum_pnl"] = df_sorted["pnl"].cumsum()
     pnl_chart = [{"trade": i + 1, "pnl": pnl} for i, pnl in enumerate(df_sorted["cum_pnl"].tolist())]
 
+    calculator = ConfidenceCalculator()
+    confidence = calculator.calculate_confidence_score(rows)
+
     longs = df[df["side"] == "long"]
     shorts = df[df["side"] == "short"]
 
@@ -68,6 +72,8 @@ def stats():
         "mostTraded": df["symbol"].mode()[0],
         "longs": side_stats(longs),
         "shorts": side_stats(shorts),
+        "confidenceScore": confidence["score"],
+        "traderRank": confidence["rank"],
         "biggestOrders": df.nlargest(5, "notional")[["symbol", "notional"]].to_dict(orient="records"),
         "biggestWinner": df.loc[df["pnl"].idxmax()][["symbol", "pnl"]].to_dict(),
         "biggestLoser": df.loc[df["pnl"].idxmin()][["symbol", "pnl"]].to_dict(),
